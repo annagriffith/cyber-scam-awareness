@@ -2,7 +2,10 @@
   "name": "cyber-scam-awareness",
   "private": true,
   "version": "0.0.0",
-  "type": "module",`n  "engines": {`n    "node": ">=24 <25"`n  },
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
