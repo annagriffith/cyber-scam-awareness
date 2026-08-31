@@ -1,6 +1,8 @@
 .breach-page {
-  min-height: 100vh;
-  padding: 26px 18px;
+  height: 100vh;
+  padding: 14px;
+  box-sizing: border-box;
+  overflow: hidden;
   background:
     radial-gradient(circle at top left, rgba(19, 90, 140, 0.24), transparent 40%),
     radial-gradient(circle at bottom right, rgba(0, 212, 255, 0.16), transparent 30%),
@@ -9,14 +11,17 @@
 
 .page-shell {
   width: min(100%, 1700px);
+  height: 100%;
   margin: 0 auto;
-  min-height: calc(100vh - 52px);
   background: rgba(5, 12, 21, 0.82);
   border: 1px solid rgba(50, 150, 255, 0.26);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-  padding: 1.6rem 2.2rem 1rem;
+  padding: 1rem 1.6rem 0.75rem;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .page-shell::before {
@@ -40,6 +45,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
+  flex-shrink: 0;
 }
 
 .brand-block {
@@ -158,23 +164,24 @@
 
 .hero-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.17fr) minmax(460px, 1fr);
+  grid-template-columns: minmax(0, 1.17fr) minmax(360px, 1fr);
   align-items: center;
-  min-height: 700px;
-  margin-top: 1.2rem;
+  flex: 1;
+  min-height: 0;
+  margin-top: 0.6rem;
 }
 
 .hero-copy {
-  padding: 2rem 0 0 0.4rem;
+  padding: 0 0 0 0.4rem;
 }
 
 .hero-copy h1 {
   max-width: 780px;
   margin: 0;
   color: #f2f8ff;
-  font-size: clamp(3rem, 4.2vw, 7rem);
-  line-height: 0.95;
-  letter-spacing: -0.08em;
+  font-size: clamp(1.9rem, 3.1vw, 4rem);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
   font-weight: 900;
   text-transform: uppercase;
   text-shadow: 0 18px 38px rgba(0, 0, 0, 0.55);
@@ -182,9 +189,9 @@
 
 .hero-description {
   max-width: 760px;
-  margin-top: 1.7rem;
-  font-size: clamp(1.05rem, 1.2vw, 1.9rem);
-  line-height: 1.45;
+  margin-top: 0.9rem;
+  font-size: clamp(0.85rem, 1vw, 1.15rem);
+  line-height: 1.4;
   color: rgba(202, 216, 235, 0.9);
 }
 
@@ -192,17 +199,17 @@
   display: inline-flex;
   align-items: center;
   gap: 0.7rem;
-  margin-top: 1.8rem;
+  margin-top: 0.9rem;
   color: #5fe0ff;
-  font-size: 0.92rem;
+  font-size: 0.78rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 800;
 }
 
 .auth-badge svg {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -213,8 +220,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1.4rem;
-  margin-top: 2.1rem;
+  gap: 1rem;
+  margin-top: 1.1rem;
 }
 
 .btn-primary,
@@ -222,8 +229,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 3.7rem;
-  padding: 0.95rem 2.1rem;
+  min-height: 2.9rem;
+  padding: 0.7rem 1.6rem;
   border-radius: 8px;
   text-decoration: none;
   border: 1px solid rgba(26, 211, 255, 0.8);
@@ -260,10 +267,10 @@
 
 .learn-link {
   display: inline-block;
-  margin-top: 1.4rem;
+  margin-top: 0.9rem;
   color: #5fe0ff;
   text-decoration: none;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   font-weight: 800;
@@ -271,7 +278,8 @@
 
 .hero-scene {
   position: relative;
-  min-height: 720px;
+  height: 100%;
+  min-height: 0;
   background:
     linear-gradient(180deg, rgba(10, 18, 30, 0.26), rgba(10, 18, 30, 0.82)),
     radial-gradient(circle at 50% 36%, rgba(0, 198, 255, 0.15), transparent 30%);
@@ -353,18 +361,18 @@
 .flow-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.1rem;
-  margin: 1.5rem auto 0;
-  padding-top: 0.4rem;
+  gap: 0.85rem;
+  margin: 0.75rem auto 0;
+  flex-shrink: 0;
 }
 
 .feature-card {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  min-height: 164px;
-  padding: 1.2rem 1.4rem 1.2rem 1.2rem;
+  gap: 0.85rem;
+  min-height: 100px;
+  padding: 0.85rem 1.1rem 0.85rem 0.9rem;
   background: rgba(10, 17, 30, 0.62);
   border: 1px solid rgba(90, 205, 255, 0.28);
   border-radius: 10px;
@@ -426,33 +434,31 @@
 
 .footer-note {
   text-align: center;
-  margin-top: 1.5rem;
-  padding: 0.7rem 0 0.2rem;
+  margin-top: 0.75rem;
+  padding: 0.4rem 0 0;
   color: rgba(203, 221, 244, 0.72);
-  font-size: 0.72rem;
-  letter-spacing: 0.34em;
+  font-size: 0.68rem;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 @media (max-width: 1180px) {
   .hero-layout {
     grid-template-columns: 1fr;
-    min-height: auto;
-  }
-
-  .hero-scene {
-    min-height: 620px;
-    margin-top: 1.5rem;
   }
 }
 
 @media (max-width: 760px) {
   .breach-page {
+    height: auto;
+    overflow: visible;
     padding: 14px 14px 24px;
   }
 
   .page-shell {
+    height: auto;
     padding: 1rem 1rem 1.1rem;
   }
 
