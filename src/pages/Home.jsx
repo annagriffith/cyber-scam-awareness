@@ -1,4 +1,5 @@
-import './App.css'
+import { Link } from 'react-router-dom'
+import './home.css'
 
 const missionCards = [
   {
@@ -32,7 +33,7 @@ const missionCards = [
   },
 ]
 
-function App() {
+export default function Home() {
   return (
     <div className="breach-page">
       <div className="page-shell">
@@ -87,9 +88,9 @@ function App() {
                 </svg>
                 START SIMULATION
               </a>
-              <a href="/how-to-play.html" className="btn-secondary">
+              <Link to="/how-to-play" className="btn-secondary">
                 HOW TO PLAY
-              </a>
+              </Link>
             </div>
 
             <a href="#" className="learn-link">
@@ -150,5 +151,3 @@ function App() {
     </div>
   )
 }
-
-export default App
