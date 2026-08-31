@@ -35,119 +35,119 @@ const missionCards = [
 
 export default function Home() {
   return (
-    <div className="breach-page">
-      <div className="page-shell">
-        <header className="topbar">
-          <div className="brand-block">
-            <div className="brand-logo">BREACH POINT</div>
-            <div className="brand-subtitle">SOCIAL ENGINEERING AWARENESS SIMULATION</div>
+    <main className="home">
+      <div className="home-grid-overlay" aria-hidden="true" />
+
+      <header className="home-header">
+        <div className="home-brand">
+          <span className="home-brand-name">Breach Point</span>
+          <span className="home-brand-tagline">Social Engineering Awareness Simulation</span>
+        </div>
+
+        <div className="home-radar" aria-label="Exposure radar">
+          <div className="home-radar-circle">
+            <span className="home-radar-blip" />
+          </div>
+          <div className="home-radar-legend">
+            <div className="home-radar-title">Exposure<br />Radar</div>
+            <div className="home-radar-item">
+              <span className="home-dot low" />
+              Low
+            </div>
+            <div className="home-radar-item">
+              <span className="home-dot elevated" />
+              Elevated
+            </div>
+            <div className="home-radar-item">
+              <span className="home-dot high" />
+              High
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section className="home-hero">
+        <div className="home-hero-copy">
+          <p className="home-eyebrow">Corporate breach simulation</p>
+          <h1>Can you bankrupt the company before you&apos;re detected?</h1>
+
+          <p className="home-intro-copy">
+            Choose fictional targets, test social engineering techniques, and learn how
+            organisations can defend themselves.
+          </p>
+
+          <div className="home-auth-badge">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+            </svg>
+            Authorised educational simulation
           </div>
 
-          <div className="exposure-radar" aria-label="Exposure radar">
-            <div className="radar-circle">
-              <span className="radar-blip" />
-            </div>
-            <div className="radar-legend">
-              <div className="radar-title">EXPOSURE<br />RADAR</div>
-              <div className="legend-item">
-                <span className="dot low" />
-                LOW
-              </div>
-              <div className="legend-item">
-                <span className="dot elevated" />
-                ELEVATED
-              </div>
-              <div className="legend-item">
-                <span className="dot high" />
-                HIGH
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="hero-layout">
-          <section className="hero-copy">
-            <h1>CAN YOU BANKRUPT THE COMPANY BEFORE YOU&apos;RE DETECTED?</h1>
-
-            <p className="hero-description">
-              Choose fictional targets, test social engineering techniques, and learn how
-              organisations can defend themselves.
-            </p>
-
-            <div className="auth-badge">
+          <div className="home-actions">
+            <a href="/game.html" className="primary-button">
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+                <path d="M8 5v14l11-7-11-7Z" />
               </svg>
-              AUTHORISED EDUCATIONAL SIMULATION
-            </div>
-
-            <div className="cta-row">
-              <a href="/game.html" className="btn-primary">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8 5v14l11-7-11-7Z" />
-                </svg>
-                START SIMULATION
-              </a>
-              <Link to="/how-to-play" className="btn-secondary">
-                HOW TO PLAY
-              </Link>
-            </div>
-
-            <a href="#" className="learn-link">
-              LEARN ABOUT SCAMS <span aria-hidden="true">›</span>
+              Start simulation
             </a>
-          </section>
+            <Link to="/how-to-play" className="outline-button">
+              How to play
+            </Link>
+          </div>
 
-          <div className="hero-scene" aria-hidden="true">
-            <div className="scene-glow" />
-            <div className="stat-stack">
-              <div className="info-panel">
-                <div className="panel-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5l3 2" />
-                  </svg>
-                </div>
-                <div className="panel-copy">
-                  <div className="panel-value">$5,000,000</div>
-                  <div className="panel-label">COMPANY FUNDS</div>
-                </div>
-              </div>
+          <a href="#" className="home-learn-link">
+            Learn about scams <span aria-hidden="true">›</span>
+          </a>
+        </div>
 
-              <div className="info-panel">
-                <div className="panel-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 3l7 3v6c0 4.4-3 8.2-7 10-4-1.8-7-5.6-7-10V6l7-3Z" />
-                  </svg>
-                </div>
-                <div className="panel-copy">
-                  <div className="panel-value">0%</div>
-                  <div className="panel-label">EXPOSURE</div>
-                </div>
-              </div>
+        <div className="home-stats">
+          <div className="home-stat-card">
+            <div className="home-stat-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+            </div>
+            <div>
+              <div className="home-stat-value">$5,000,000</div>
+              <div className="home-stat-label">Company funds</div>
             </div>
           </div>
-        </main>
 
-        <section className="flow-cards" aria-label="Simulation flow">
-          {missionCards.map((card) => (
-            <article className="feature-card" key={card.title}>
-              <div className="card-icon">{card.icon}</div>
-              <div className="card-copy">
-                <h2>{card.title}</h2>
-                <p>{card.description}</p>
-              </div>
-              <span className="card-arrow" aria-hidden="true">
-                ›
-              </span>
-            </article>
-          ))}
-        </section>
+          <div className="home-stat-card">
+            <div className="home-stat-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3l7 3v6c0 4.4-3 8.2-7 10-4-1.8-7-5.6-7-10V6l7-3Z" />
+              </svg>
+            </div>
+            <div>
+              <div className="home-stat-value">0%</div>
+              <div className="home-stat-label">Exposure</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <footer className="footer-note">
-          FICTIONAL TARGETS • NO USER DATA COLLECTED • EDUCATIONAL USE ONLY
-        </footer>
-      </div>
-    </div>
+      <section className="home-flow" aria-label="Simulation flow">
+        {missionCards.map((card) => (
+          <article className="home-flow-card" key={card.title}>
+            <div className="home-flow-icon">{card.icon}</div>
+            <div>
+              <h2>{card.title}</h2>
+              <p>{card.description}</p>
+            </div>
+            <span className="home-flow-arrow" aria-hidden="true">
+              ›
+            </span>
+          </article>
+        ))}
+      </section>
+
+      <footer className="home-disclaimer">
+        <span>Fictional targets</span><i aria-hidden="true" />
+        <span>No user data collected</span><i aria-hidden="true" />
+        <span>Educational use only</span>
+      </footer>
+    </main>
   )
 }
