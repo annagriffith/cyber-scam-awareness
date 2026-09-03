@@ -1,51 +1,56 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './Gameplay.css'
+import jordanPortrait from './assets/targets/jordan-malik.jpg'
+import priyaPortrait from './assets/targets/priya-nandakumar.jpg'
+import derekPortrait from './assets/targets/derek-combs.jpg'
+import sarahPortrait from './assets/targets/sarah-lindqvist.jpg'
+import marcusPortrait from './assets/targets/marcus-reyes.jpg'
 
 const targets = [
   {
     id: 'jordan', name: 'Jordan Malik', initials: 'JM', role: 'Service Desk', tier: 1,
-    tierLabel: 'Employee', tone: 'blue',
+    tierLabel: 'Employee', tone: 'blue', image: jordanPortrait,
     traits: ['New to the role and eager to help', 'Spends downtime on Facebook', 'More cautious with unexpected calls'],
-    scenario: 'A staff member reports a locked account during a busy shift. Jordan wants to resolve the request quickly and prove he can handle it without escalation.',
-    transcript: 'Iris: Jordan is still finding his feet on the service desk. He responds to authority and urgency, but a recent prank call has made him more careful on the phone.',
+    scenario: 'The service desk queue is building during a busy afternoon when a staff member reports being locked out before an important meeting. The request includes familiar company language, but some details still need to be checked against the ticketing system. Jordan is handling the queue without direct supervision and wants to resolve the issue without delaying the employee.',
+    transcript: 'Iris: Jordan joined Solstice six months ago after completing his first industry certification. He is friendly, capable and keen to show that he can manage requests independently, although he is still learning when to slow down and escalate. He sometimes checks Facebook during quiet periods, but a prank caller last month has made him more cautious whenever an unfamiliar voice contacts the desk.',
     strengths: { phishing: ['email', 'teams'], social: ['facebook'] },
     weaknesses: { phishing: ['vishing'] },
   },
   {
     id: 'priya', name: 'Priya Nandakumar', initials: 'PN', role: 'Receptionist', tier: 1,
-    tierLabel: 'Employee', tone: 'violet',
+    tierLabel: 'Employee', tone: 'violet', image: priyaPortrait,
     traits: ['Handles constant calls and interruptions', 'Strict about visitor sign-in procedure', 'Posts about workdays on Instagram'],
-    scenario: 'The reception desk is busy with visitors and incoming calls. A believable request arrives while Priya is switching between several tasks.',
-    transcript: 'Iris: Priya follows physical visitor procedure closely, but the volume of unscheduled calls creates pressure. Her public Instagram activity may also reveal useful context.',
+    scenario: 'The reception area is crowded as Priya manages visitors, deliveries and several incoming calls at once. A request arrives during the busiest part of the shift and appears connected to normal front-desk activity. Priya has limited time to investigate it, but she is responsible for keeping company procedures consistent while helping people quickly.',
+    transcript: 'Iris: Priya has worked at the front desk for five years and remains calm when several tasks compete for her attention. She follows the visitor sign-in process carefully because the rule was strengthened after an earlier security concern. Outside work she posts ordinary updates about busy days on Instagram, while the constant volume of unscheduled calls sometimes gives her very little time to assess each caller.',
     strengths: { phishing: ['vishing'], social: ['instagram'] },
     weaknesses: { phishing: ['email', 'teams'] },
   },
   {
     id: 'derek', name: 'Derek Combs', initials: 'DC', role: 'IT Manager', tier: 3,
-    tierLabel: 'Manager', tone: 'teal',
+    tierLabel: 'Manager', tone: 'teal', image: derekPortrait,
     traits: ['Trusts his own technical judgement', 'Responds to fellow-IT framing', 'Accepts only mutual social contacts'],
-    scenario: 'An internal-looking request claims that an urgent technical review must be completed before the next board call. Derek believes he can recognise obvious scams.',
-    transcript: 'Iris: Derek is experienced, but confidence can replace verification. Information gathered from Jordan may make an internal IT pretext more believable.',
+    scenario: 'A technical request appears shortly before a scheduled board call and refers to an internal system issue that may affect senior staff. The message uses terminology familiar to the IT team and suggests that waiting could interrupt the meeting. Derek must decide whether the request fits normal internal practice while managing several other operational priorities.',
+    transcript: 'Iris: Derek worked his way from helpdesk support to IT management over more than a decade. He is genuinely knowledgeable and often trusts his technical instincts because they have usually served him well. He still speaks informally with junior IT staff, but he is more guarded online and generally accepts professional connections only when a mutual contact makes them appear credible.',
     strengths: { phishing: ['email', 'teams'] },
     weaknesses: { social: ['linkedin', 'facebook', 'instagram'] },
     lockedMessage: 'Gain a successful foothold with Jordan or Priya to unlock Manager targets.',
   },
   {
     id: 'sarah', name: 'Sarah Lindqvist', initials: 'SL', role: 'HR Manager', tier: 3,
-    tierLabel: 'Manager', tone: 'amber',
+    tierLabel: 'Manager', tone: 'amber', image: sarahPortrait,
     traits: ['Responds to empathy-based appeals', 'Verifies sensitive requests by phone', 'Trusted contact for staff problems'],
-    scenario: 'A message describes an urgent staff wellbeing problem and asks HR to review private information before a scheduled meeting.',
-    transcript: 'Iris: Sarah genuinely wants to help people in difficulty. Her empathy is reachable, but she has a firm phone-verification process for sensitive actions.',
+    scenario: 'HR receives a sensitive request concerning an employee who may need urgent support before an upcoming meeting. The situation sounds personal and time-sensitive, but acting on it could involve confidential staff information. Sarah must balance a quick, compassionate response with the verification procedures expected of her department.',
+    transcript: 'Iris: Sarah moved into HR from a people-focused role and has become the manager employees approach when they are dealing with genuine problems. A previous near-miss led her to introduce phone-verification procedures for sensitive requests, and she follows that rule firmly. In most other situations, however, she is willing to be flexible when someone appears distressed or urgently needs help.',
     strengths: { phishing: ['email', 'teams'], social: ['facebook', 'instagram'] },
     weaknesses: { phishing: ['vishing'] },
     lockedMessage: 'Gain a successful foothold with Jordan or Priya to unlock Manager targets.',
   },
   {
     id: 'marcus', name: 'Marcus Reyes', initials: 'MR', role: 'CEO', tier: 4,
-    tierLabel: 'CEO', tone: 'red',
+    tierLabel: 'CEO', tone: 'red', image: marcusPortrait,
     traits: ['High-profile speaker with public footage', 'Contact is filtered through an assistant', 'Requires strong prior intelligence'],
-    scenario: 'A high-stakes request must reach Marcus during a narrow gap in his schedule. His executive assistant normally filters all unexpected contact.',
-    transcript: 'Iris: Marcus is difficult to reach directly. Manager-level intelligence is essential, although his public interviews and keynotes create deepfake exposure.',
+    scenario: 'A high-impact request is timed for a narrow gap between executive meetings and appears relevant to an upcoming company decision. Marcus normally receives information through his executive assistant, so unexpected direct contact is unusual. The request must look consistent with his schedule and established communication pathways before it receives attention.',
+    transcript: 'Iris: Marcus is the public face of Solstice and is comfortable speaking at industry keynotes, recorded interviews and podcasts. Those appearances have created a large amount of publicly available audio and video, but reaching him directly remains difficult. Most requests are filtered through his executive assistant, and he has become accustomed to relying on that process rather than personally checking every new contact.',
     strengths: { deepfake: ['voice', 'video'] },
     weaknesses: { phishing: ['email', 'teams'], social: ['linkedin', 'facebook', 'instagram'] },
     lockedMessage: 'Complete at least one successful Manager attempt to unlock the CEO.',
@@ -65,31 +70,296 @@ const techniques = [
   ] },
 ]
 
+const defenses = {
+  phishing: {
+    email: {
+      name: 'Secure Email Gateway',
+      description: 'Scans links and attachments, detects spoofed domains, and checks SPF, DKIM and DMARC before delivery.',
+    },
+    sms: {
+      name: 'Mobile Threat Defence',
+      description: 'Flags suspicious senders and malicious links in SMS messages before an employee can interact with them.',
+    },
+    vishing: {
+      name: 'Trusted Callback Verification',
+      description: 'Requires sensitive phone requests to be verified using a known number from the company directory.',
+    },
+    teams: {
+      name: 'Collaboration Security Gateway',
+      description: 'Marks external users, scans shared links and files, and restricts unexpected direct messages.',
+    },
+  },
+  social: {
+    facebook: {
+      name: 'Identity and Impersonation Monitoring',
+      description: 'Detects cloned profiles and requires staff to verify unexpected connection requests through a trusted channel.',
+    },
+    instagram: {
+      name: 'Social Impersonation Detection',
+      description: 'Monitors lookalike accounts and warns employees about unverified profiles using company or staff identities.',
+    },
+    linkedin: {
+      name: 'Professional Network Verification',
+      description: 'Checks mutual connections, profile history and identity signals before a work-related request is trusted.',
+    },
+  },
+  deepfake: {
+    voice: {
+      name: 'Voice Verification Protocol',
+      description: 'Uses challenge-response questions and a trusted callback before approving requests made by voice.',
+    },
+    video: {
+      name: 'Liveness and Media Provenance Check',
+      description: 'Checks liveness signals, media provenance and request context, then confirms the request through a second channel.',
+    },
+  },
+}
+
 const startingFunds = 5_000_000
 const formatMoney = (value) => new Intl.NumberFormat('en-AU', {
   style: 'currency', currency: 'AUD', maximumFractionDigits: 0,
 }).format(value)
 
+const femaleVoiceHints = [
+  'natasha', 'catherine', 'karen', 'samantha', 'zira', 'aria', 'jenny',
+  'sonia', 'victoria', 'moira', 'tessa', 'ava', 'susan', 'hazel',
+]
+
+const getPreferredNarrationVoice = () => {
+  if (!('speechSynthesis' in window)) return null
+
+  const voices = window.speechSynthesis.getVoices()
+  const isFemaleVoice = (voice) => femaleVoiceHints.some((hint) => voice.name.toLowerCase().includes(hint))
+
+  return voices.find((voice) => voice.lang.toLowerCase().startsWith('en-au') && isFemaleVoice(voice))
+    ?? voices.find((voice) => voice.lang.toLowerCase().startsWith('en') && isFemaleVoice(voice))
+    ?? voices.find((voice) => voice.lang.toLowerCase().startsWith('en-au'))
+    ?? voices.find((voice) => voice.lang.toLowerCase().startsWith('en'))
+    ?? null
+}
+
 function Gameplay() {
-  const [musicOn, setMusicOn] = useState(true)
+  const [audioSettings, setAudioSettings] = useState({
+    musicEnabled: false,
+    musicVolume: 22,
+    loopMusic: true,
+    duckDuringNarration: true,
+    soundEffectsEnabled: true,
+    soundEffectsVolume: 35,
+  })
+  const [draftAudioSettings, setDraftAudioSettings] = useState(audioSettings)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [selectedTargetId, setSelectedTargetId] = useState('jordan')
   const [selectedTechnique, setSelectedTechnique] = useState('')
   const [subtypes, setSubtypes] = useState({ phishing: 'email', social: 'linkedin', deepfake: 'voice' })
   const [funds, setFunds] = useState(startingFunds)
   const [exposure, setExposure] = useState(0)
-  const [turn, setTurn] = useState(1)
+  const [turn, setTurn] = useState(0)
   const [employeeCleared, setEmployeeCleared] = useState(false)
   const [managerCleared, setManagerCleared] = useState(false)
+  const [successfulTargetIds, setSuccessfulTargetIds] = useState(() => new Set())
   const [lastTargetId, setLastTargetId] = useState(null)
   const [repeatCount, setRepeatCount] = useState(0)
   const [result, setResult] = useState(null)
+  const [pendingResult, setPendingResult] = useState(null)
+  const [defenseSelection, setDefenseSelection] = useState(null)
+  const [narrationState, setNarrationState] = useState(() => 'speechSynthesis' in window ? 'idle' : 'unsupported')
+  const [narrationMuted, setNarrationMuted] = useState(false)
+  const musicRef = useRef(null)
+  const clickAudioContextRef = useRef(null)
+  const narrationVoiceRef = useRef(null)
+  const utteranceRef = useRef(null)
+
+  const roundLocked = Boolean(pendingResult || result)
 
   const selectedTarget = useMemo(
     () => targets.find((target) => target.id === selectedTargetId) ?? targets[0],
     [selectedTargetId],
   )
 
+  const narrationText = useMemo(() => {
+    const irisBriefing = selectedTarget.transcript.replace(/^Iris:\s*/i, '')
+    return `Scenario. ${selectedTarget.scenario} Briefing from Iris. ${irisBriefing}`
+  }, [selectedTarget])
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) {
+      return undefined
+    }
+
+    const loadVoice = () => {
+      narrationVoiceRef.current = getPreferredNarrationVoice()
+    }
+
+    loadVoice()
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoice)
+
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', loadVoice)
+      window.speechSynthesis.cancel()
+    }
+  }, [])
+
+  useEffect(() => {
+    const music = musicRef.current
+    if (!music) return
+
+    const narrationIsPlaying = narrationState === 'playing'
+    const duckingMultiplier = audioSettings.duckDuringNarration && narrationIsPlaying ? 0.28 : 1
+    music.volume = (audioSettings.musicVolume / 100) * duckingMultiplier
+    music.loop = audioSettings.loopMusic
+  }, [audioSettings.duckDuringNarration, audioSettings.loopMusic, audioSettings.musicVolume, narrationState])
+
+  useEffect(() => {
+    const handleButtonClick = (event) => {
+      const button = event.target.closest('button')
+      if (!button || button.disabled || button.closest('.audio-controls') || !audioSettings.soundEffectsEnabled) return
+
+      const AudioContextClass = window.AudioContext ?? window.webkitAudioContext
+      if (!AudioContextClass) return
+
+      const context = clickAudioContextRef.current ?? new AudioContextClass()
+      clickAudioContextRef.current = context
+      if (context.state === 'suspended') context.resume()
+
+      const oscillator = context.createOscillator()
+      const gain = context.createGain()
+      const now = context.currentTime
+      const level = Math.max(0.001, (audioSettings.soundEffectsVolume / 100) * 0.08)
+
+      oscillator.type = 'sine'
+      oscillator.frequency.setValueAtTime(720, now)
+      oscillator.frequency.exponentialRampToValueAtTime(390, now + 0.055)
+      gain.gain.setValueAtTime(level, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06)
+      oscillator.connect(gain)
+      gain.connect(context.destination)
+      oscillator.start(now)
+      oscillator.stop(now + 0.065)
+    }
+
+    document.addEventListener('click', handleButtonClick)
+    return () => document.removeEventListener('click', handleButtonClick)
+  }, [audioSettings.soundEffectsEnabled, audioSettings.soundEffectsVolume])
+
+  useEffect(() => {
+    if (!settingsOpen) return undefined
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setSettingsOpen(false)
+    }
+
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [settingsOpen])
+
+  useEffect(() => {
+    const music = musicRef.current
+    return () => {
+      music?.pause()
+      clickAudioContextRef.current?.close()
+    }
+  }, [])
+
+  const openAudioSettings = () => {
+    setDraftAudioSettings(audioSettings)
+    setSettingsOpen(true)
+  }
+
+  const updateDraftAudioSetting = (key, value) => {
+    setDraftAudioSettings((current) => ({ ...current, [key]: value }))
+  }
+
+  const saveAudioSettings = () => {
+    const music = musicRef.current
+
+    if (music) {
+      music.volume = draftAudioSettings.musicVolume / 100
+      music.loop = draftAudioSettings.loopMusic
+      if (draftAudioSettings.musicEnabled) {
+        music.play().catch(() => {
+          setAudioSettings((current) => ({ ...current, musicEnabled: false }))
+        })
+      } else {
+        music.pause()
+      }
+    }
+
+    setAudioSettings(draftAudioSettings)
+    setSettingsOpen(false)
+  }
+
+  const playNarration = (restart = false) => {
+    if (!('speechSynthesis' in window)) {
+      setNarrationState('unsupported')
+      return
+    }
+
+    const speech = window.speechSynthesis
+    if (!restart && speech.paused) {
+      speech.resume()
+      setNarrationMuted(false)
+      setNarrationState('playing')
+      return
+    }
+
+    if (speech.paused) speech.resume()
+    speech.cancel()
+    const utterance = new SpeechSynthesisUtterance(narrationText)
+    utterance.voice = narrationVoiceRef.current ?? getPreferredNarrationVoice()
+    utterance.lang = utterance.voice?.lang ?? 'en-AU'
+    utterance.rate = 0.92
+    utterance.pitch = 1.04
+    utterance.volume = 1
+    utterance.onstart = () => setNarrationState('playing')
+    utterance.onend = () => {
+      setNarrationState('idle')
+      utteranceRef.current = null
+    }
+    utterance.onerror = () => {
+      setNarrationState('idle')
+      utteranceRef.current = null
+    }
+
+    utteranceRef.current = utterance
+    setNarrationMuted(false)
+    speech.speak(utterance)
+  }
+
+  const pauseNarration = () => {
+    if (!('speechSynthesis' in window)) return
+    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+      window.speechSynthesis.pause()
+      setNarrationState('paused')
+    }
+  }
+
+  const toggleNarrationMute = () => {
+    if (!('speechSynthesis' in window)) return
+
+    if (!narrationMuted) {
+      if (window.speechSynthesis.paused) window.speechSynthesis.resume()
+      window.speechSynthesis.cancel()
+      utteranceRef.current = null
+      setNarrationState('idle')
+      setNarrationMuted(true)
+    } else {
+      setNarrationMuted(false)
+    }
+  }
+
+  const stopNarration = () => {
+    if ('speechSynthesis' in window) {
+      if (window.speechSynthesis.paused) window.speechSynthesis.resume()
+      window.speechSynthesis.cancel()
+    }
+    utteranceRef.current = null
+    setNarrationState('speechSynthesis' in window ? 'idle' : 'unsupported')
+    setNarrationMuted(false)
+  }
+
   const targetLocked = (target) => {
+    if (successfulTargetIds.has(target.id)) return true
     if (target.tier === 3) return !employeeCleared
     if (target.tier === 4) return !managerCleared
     return false
@@ -99,18 +369,25 @@ function Gameplay() {
     ?.options.find((option) => option.id === subtypes[selectedTechnique])
 
   const resetGame = () => {
+    stopNarration()
     setSelectedTargetId('jordan'); setSelectedTechnique(''); setFunds(startingFunds)
-    setExposure(0); setTurn(1); setEmployeeCleared(false); setManagerCleared(false)
+    setExposure(0); setTurn(0); setEmployeeCleared(false); setManagerCleared(false)
+    setSuccessfulTargetIds(new Set())
     setLastTargetId(null); setRepeatCount(0); setResult(null)
+    setPendingResult(null); setDefenseSelection(null)
+    setNarrationState('idle'); setNarrationMuted(false)
   }
 
   const selectTarget = (id) => {
+    if (roundLocked || successfulTargetIds.has(id)) return
+    stopNarration()
     setSelectedTargetId(id); setSelectedTechnique(''); setResult(null)
   }
 
   const launchSimulation = () => {
-    if (!selectedTechnique || targetLocked(selectedTarget)) return
+    if (!selectedTechnique || targetLocked(selectedTarget) || roundLocked) return
     const subtype = subtypes[selectedTechnique]
+    const selectedDefense = defenses[selectedTechnique][subtype]
     const isStrong = selectedTarget.strengths[selectedTechnique]?.includes(subtype)
     const isWeak = selectedTarget.weaknesses[selectedTechnique]?.includes(subtype)
     const nextRepeatCount = lastTargetId === selectedTarget.id ? repeatCount + 1 : 1
@@ -119,38 +396,79 @@ function Gameplay() {
     const damage = Math.round((isStrong ? 560_000 : isWeak ? 70_000 : 230_000) * tierMultiplier)
     const exposureGain = Math.min(40, Math.round((isStrong ? 8 : isWeak ? 22 : 14) * tierMultiplier + fatigue))
 
-    setFunds((value) => Math.max(0, value - damage))
-    setExposure((value) => Math.min(100, value + exposureGain))
-    setLastTargetId(selectedTarget.id); setRepeatCount(nextRepeatCount)
-    if (isStrong && selectedTarget.tier === 1) setEmployeeCleared(true)
-    if (isStrong && selectedTarget.tier === 3) setManagerCleared(true)
+    setDefenseSelection({
+      ...selectedDefense,
+      technique: techniques.find((item) => item.id === selectedTechnique)?.title,
+      subtype: selectedOption.label,
+      target: selectedTarget.name,
+    })
 
-    setResult({
+    setPendingResult({
       outcome: isStrong ? 'Effective match' : isWeak ? 'High-risk mismatch' : 'Partial result',
-      damage, exposureGain, isStrong, isWeak, fatigue: nextRepeatCount > 1,
+      damage, exposureGain, isStrong, isWeak, nextRepeatCount,
+      fatigue: nextRepeatCount > 1,
       text: isStrong
-        ? `${selectedOption.label} aligned with ${selectedTarget.name}'s visible behaviour. The simulated approach caused significant impact, but it still left evidence and raised exposure.`
+        ? `${selectedOption.label} aligned with ${selectedTarget.name}'s visible behaviour. The company selected ${selectedDefense.name}, but the well-matched approach bypassed the control and caused significant simulated impact.`
         : isWeak
-          ? `${selectedOption.label} conflicted with ${selectedTarget.name}'s known safeguards. The attempt caused little impact and made the activity easier to detect.`
-          : `${selectedOption.label} had limited relevance to this target. Some impact occurred, but the risk-to-reward result was weak.`,
+          ? `${selectedOption.label} conflicted with ${selectedTarget.name}'s known safeguards. ${selectedDefense.name} reduced most of the impact and made the activity easier to detect.`
+          : `${selectedOption.label} had limited relevance to this target. ${selectedDefense.name} reduced the impact, leaving a weak risk-to-reward result.`,
       defence: isStrong
-        ? 'Use a trusted second channel, slow down urgent requests, and report unusual contact through the organisation’s security process.'
-        : 'The target’s existing verification habit reduced the impact. Consistent process is more reliable than judging a message by appearance alone.',
+        ? `The correct control was selected, but no defence is perfect when a request closely matches an employee's role and behaviour. A trusted second-channel check is still essential.`
+        : `${selectedDefense.name} worked with the target's existing verification habits to reduce the simulated impact.`,
     })
   }
 
-  const nextRound = () => { setTurn((value) => value + 1); setSelectedTechnique(''); setResult(null) }
+  const displayRoundResult = () => {
+    if (!pendingResult) return
+
+    stopNarration()
+
+    setFunds((value) => Math.max(0, value - pendingResult.damage))
+    setExposure((value) => Math.min(100, value + pendingResult.exposureGain))
+    setLastTargetId(selectedTarget.id)
+    setRepeatCount(pendingResult.nextRepeatCount)
+
+    if (pendingResult.isStrong && selectedTarget.tier === 1) setEmployeeCleared(true)
+    if (pendingResult.isStrong && selectedTarget.tier === 3) setManagerCleared(true)
+    if (pendingResult.isStrong) {
+      setSuccessfulTargetIds((current) => new Set(current).add(selectedTarget.id))
+    }
+
+    setResult(pendingResult)
+    setPendingResult(null)
+  }
+
+  const nextRound = () => {
+    stopNarration()
+    const nextAvailableTarget = targets.find((target) => !targetLocked(target))
+    if (nextAvailableTarget) setSelectedTargetId(nextAvailableTarget.id)
+    setTurn((value) => value + 1)
+    setSelectedTechnique('')
+    setResult(null)
+    setPendingResult(null)
+    setDefenseSelection(null)
+  }
   const fundsPercent = (funds / startingFunds) * 100
 
   return (
     <main className="game-page">
+      <audio ref={musicRef} src="/audio/max-brhon-cyberpunk.mp3" preload="metadata" />
+      <div className="cyber-atmosphere" aria-hidden="true">
+        <span className="ambient-orb orb-one" />
+        <span className="ambient-orb orb-two" />
+        <span className="scan-beam" />
+      </div>
       <div className="game-shell">
         <header className="game-header">
-          <div><div className="game-brand">BREACH POINT</div><div className="game-subtitle">SOCIAL ENGINEERING AWARENESS SIMULATION</div></div>
+          <div className="brand-lockup">
+            <div className="game-brand" data-text="BREACH POINT">BREACH POINT</div>
+            <div className="game-subtitle">SOCIAL ENGINEERING AWARENESS SIMULATION</div>
+            <div className="system-status-line"><span><i />SIMULATION ONLINE</span><span>LOCAL SESSION</span><span>NO DATA STORED</span></div>
+          </div>
           <div className="header-actions">
-            <button className="utility-button" type="button" onClick={() => setMusicOn(!musicOn)}>
-              <span className="music-note">♫</span> MUSIC {musicOn ? 'ON' : 'OFF'}
-              <span className={`toggle ${musicOn ? 'active' : ''}`}><span /></span>
+            <button className="utility-button" type="button" onClick={openAudioSettings} aria-haspopup="dialog">
+              <span className="settings-icon">⚙</span> SETTINGS
+              <span className={`audio-status-dot ${audioSettings.musicEnabled ? 'active' : ''}`} aria-label={`Music ${audioSettings.musicEnabled ? 'on' : 'off'}`} />
             </button>
             <button className="utility-button" type="button" onClick={resetGame}><span className="restart-icon">↻</span> RESTART</button>
           </div>
@@ -186,24 +504,25 @@ function Gameplay() {
         <section className="gameplay-grid">
           <article className="target-panel glass-panel">
             <div className="section-kicker">TARGET</div>
-            <div className={`target-avatar ${selectedTarget.tone}`} aria-label={`${selectedTarget.name} avatar`}><span>{selectedTarget.initials}</span><div className="avatar-rings" /></div>
+            <div className={`target-avatar ${selectedTarget.tone}`}>
+              <img src={selectedTarget.image} alt={`${selectedTarget.name}, ${selectedTarget.role}`} />
+              <div className="avatar-rings" />
+            </div>
             <div className="target-traits">
               {selectedTarget.traits.map((trait, index) => <div key={trait}><span>{['✉', '▣', '▱'][index]}</span>{trait}</div>)}
             </div>
           </article>
 
           <article className="selection-panel glass-panel">
-            <label className="section-kicker" htmlFor="target-select">CHOOSE TARGET</label>
-            <div className="select-wrap"><select id="target-select" value={selectedTargetId} onChange={(event) => selectTarget(event.target.value)}>
-              {targets.map((target) => <option key={target.id} value={target.id} disabled={targetLocked(target)}>{targetLocked(target) ? 'LOCKED — ' : ''}{target.name.toUpperCase()} — {target.role.toUpperCase()}</option>)}
-            </select></div>
+            <div className="section-kicker">CHOOSE TARGET</div>
             <div className="target-list" aria-label="Available targets">
               {targets.map((target) => {
                 const locked = targetLocked(target)
-                return <button className={`target-row ${target.id === selectedTargetId ? 'selected' : ''}`} key={target.id} type="button" disabled={locked} title={locked ? target.lockedMessage : `Select ${target.name}`} onClick={() => selectTarget(target.id)}>
-                  <span className={`mini-avatar ${target.tone}`}>{target.initials}</span>
+                const successful = successfulTargetIds.has(target.id)
+                return <button className={`target-row ${target.id === selectedTargetId ? 'selected' : ''} ${successful ? 'completed' : ''}`} key={target.id} type="button" disabled={locked || roundLocked} title={successful ? `${target.name}: attack successful` : locked ? target.lockedMessage : roundLocked ? 'Complete the current round first' : `Select ${target.name}`} onClick={() => selectTarget(target.id)}>
+                  <span className={`mini-avatar ${target.tone}`}><img src={target.image} alt="" /></span>
                   <span className="target-row-copy"><strong>{target.name}</strong><small>{target.role}</small></span>
-                  <span className="level-tag">{locked ? 'LOCKED' : `LEVEL ${target.tier}`}</span>
+                  <span className={`level-tag ${successful ? 'success' : ''}`}>{successful ? 'ATTACK SUCCESSFUL' : locked ? 'LOCKED' : `LEVEL ${target.tier}`}</span>
                 </button>
               })}
             </div>
@@ -213,10 +532,12 @@ function Gameplay() {
             {!result ? <>
               <div className="section-kicker">SCENARIO</div><p className="scenario-copy">{selectedTarget.scenario}</p>
               <div className="audio-controls" aria-label="Narration controls">
-                <button type="button" aria-label="Play narration"><span>▶</span> PLAY</button><button type="button" aria-label="Pause narration"><span>Ⅱ</span> PAUSE</button>
-                <button type="button" aria-label="Replay narration"><span>↻</span> REPLAY</button><button type="button" aria-label="Mute narration"><span>🔇</span> MUTE</button>
+                <button className={narrationState === 'playing' ? 'active' : ''} type="button" aria-label={narrationState === 'paused' ? 'Resume narration' : 'Play narration'} disabled={narrationState === 'unsupported'} onClick={() => playNarration(false)}><span>▶</span> {narrationState === 'paused' ? 'RESUME' : 'PLAY'}</button>
+                <button className={narrationState === 'paused' ? 'active' : ''} type="button" aria-label="Pause narration" disabled={narrationState !== 'playing'} onClick={pauseNarration}><span>Ⅱ</span> PAUSE</button>
+                <button type="button" aria-label="Replay narration from the beginning" disabled={narrationState === 'unsupported'} onClick={() => playNarration(true)}><span>↻</span> REPLAY</button>
+                <button className={narrationMuted ? 'active muted' : ''} type="button" aria-label={narrationMuted ? 'Unmute narration' : 'Mute narration'} aria-pressed={narrationMuted} disabled={narrationState === 'unsupported'} onClick={toggleNarrationMute}><span>{narrationMuted ? '🔈' : '🔇'}</span> {narrationMuted ? 'UNMUTE' : 'MUTE'}</button>
               </div>
-              <div className="transcript-box"><div className="transcript-heading"><span>TRANSCRIPT</span><span>VISIBLE NARRATION</span></div><p>{selectedTarget.transcript}</p></div>
+              <div className="transcript-box"><div className="transcript-heading"><span>TRANSCRIPT</span><span>{narrationState === 'unsupported' ? 'VOICE UNAVAILABLE' : narrationMuted ? 'NARRATION MUTED' : narrationState === 'playing' ? 'NARRATION PLAYING' : narrationState === 'paused' ? 'NARRATION PAUSED' : 'VISIBLE NARRATION'}</span></div><p>{selectedTarget.transcript}</p></div>
             </> : <div className="round-result" aria-live="polite">
               <div className="result-topline"><div><span className="section-kicker">ROUND RESULT</span><h2>{result.outcome}</h2></div><span className={`result-badge ${result.isStrong ? 'effective' : result.isWeak ? 'risky' : 'partial'}`}>{result.isStrong ? '✓ EFFECTIVE' : result.isWeak ? '! HIGH EXPOSURE' : '• PARTIAL'}</span></div>
               <div className="result-impact"><div><small>COMPANY DAMAGE</small><strong>−{formatMoney(result.damage)}</strong></div><div><small>EXPOSURE GAIN</small><strong>+{result.exposureGain}%</strong></div></div>
@@ -230,23 +551,130 @@ function Gameplay() {
           <div className="technique-heading">CHOOSE A TECHNIQUE AND TYPE</div>
           <div className="technique-layout">
             <div className="technique-cards">
-              {techniques.map((technique) => <article key={technique.id} className={`technique-card ${selectedTechnique === technique.id ? 'selected' : ''}`} onClick={() => !result && setSelectedTechnique(technique.id)}>
-                <button className="technique-main" type="button" disabled={Boolean(result)} aria-pressed={selectedTechnique === technique.id}>
+              {techniques.map((technique) => <article key={technique.id} className={`technique-card ${selectedTechnique === technique.id ? 'selected' : ''} ${roundLocked ? 'locked' : ''}`} onClick={() => !roundLocked && setSelectedTechnique(technique.id)}>
+                <button className="technique-main" type="button" disabled={roundLocked} aria-pressed={selectedTechnique === technique.id}>
                   <span className="technique-icon">{technique.icon}</span><span><strong>{technique.title}</strong><small>{technique.description}</small></span>
                 </button>
-                <label><span>TYPE</span><select value={subtypes[technique.id]} disabled={Boolean(result)} onClick={(event) => event.stopPropagation()} onChange={(event) => { setSelectedTechnique(technique.id); setSubtypes((current) => ({ ...current, [technique.id]: event.target.value })) }}>
+                <label><span>TYPE</span><select value={subtypes[technique.id]} disabled={roundLocked} onClick={(event) => event.stopPropagation()} onChange={(event) => { setSelectedTechnique(technique.id); setSubtypes((current) => ({ ...current, [technique.id]: event.target.value })) }}>
                   {technique.options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
                 </select></label>
               </article>)}
             </div>
             <aside className="launch-panel">
-              {!result ? <button className="launch-button" type="button" disabled={!selectedTechnique || targetLocked(selectedTarget)} onClick={launchSimulation}>LAUNCH SIMULATION <span>{selectedTechnique ? '▶' : '▣'}</span></button>
-                : <button className="launch-button next" type="button" onClick={nextRound}>NEXT ROUND <span>›</span></button>}
-              <p>{result ? 'Review the educational result, then continue.' : selectedTechnique ? `${techniques.find((item) => item.id === selectedTechnique)?.title}: ${selectedOption?.label}` : 'Select a target and choose a technique type to launch the simulation.'}</p>
+              {!pendingResult && !result && <button className="launch-button" type="button" disabled={!selectedTechnique || targetLocked(selectedTarget)} onClick={launchSimulation}>LAUNCH SIMULATION <span>{selectedTechnique ? '▶' : '▣'}</span></button>}
+              {pendingResult && <button className="launch-button defense-locked" type="button" disabled>AI DEFENSE LOCKED <span>▣</span></button>}
+              {result && <button className="launch-button next" type="button" onClick={nextRound}>NEXT ROUND <span>›</span></button>}
+              <p>{result ? 'Review the educational result, then continue.' : pendingResult ? 'The company has selected its defensive response. Reveal the result below.' : selectedTechnique ? `${techniques.find((item) => item.id === selectedTechnique)?.title}: ${selectedOption?.label}` : 'Select a target and choose a technique type to launch the simulation.'}</p>
             </aside>
           </div>
         </section>
+
+        <section className={`ai-defense-section glass-panel ${defenseSelection ? 'active' : ''}`} aria-live="polite">
+          <div className="ai-defense-header">
+            <div>
+              <div className="section-kicker">COMPANY AI DEFENSE</div>
+              <p>Automatically selects the company control that best matches the simulated attack.</p>
+            </div>
+            <span className={`ai-status ${result ? 'resolved' : defenseSelection ? 'locked' : ''}`}>
+              {result ? 'ROUND RESOLVED' : defenseSelection ? 'RESPONSE LOCKED' : 'STANDBY'}
+            </span>
+          </div>
+
+          <div className="ai-defense-body">
+            <div className="ai-core">
+              <div className="ai-core-icon"><span>AI</span></div>
+              <div><strong>AEGIS DEFENSE ENGINE</strong><small>Company controlled • User cannot modify</small></div>
+            </div>
+
+            {!defenseSelection ? (
+              <div className="ai-defense-empty">
+                <span className="scan-line" />
+                <strong>WAITING FOR SIMULATION</strong>
+                <p>Launch an attack to let the company analyse its channel and select a defensive control.</p>
+              </div>
+            ) : (
+              <>
+                <div className="defense-control-card">
+                  <div className="defense-control-label">SELECTED DEFENSIVE CONTROL <span>LOCKED</span></div>
+                  <h3>{defenseSelection.name}</h3>
+                  <p>{defenseSelection.description}</p>
+                  <div className="defense-tags">
+                    <span>{defenseSelection.technique}</span>
+                    <span>{defenseSelection.subtype}</span>
+                    <span>{defenseSelection.target}</span>
+                  </div>
+                </div>
+
+                <div className="defense-result-action">
+                  <div className={`defense-outcome ${result ? result.isStrong ? 'bypassed' : 'held' : 'pending'}`}>
+                    <small>DEFENSE STATUS</small>
+                    <strong>{result ? result.isStrong ? 'DEFENSE BYPASSED' : result.isWeak ? 'DEFENSE HELD' : 'IMPACT REDUCED' : 'CONTROL DEPLOYED'}</strong>
+                  </div>
+                  {pendingResult && <button className="display-result-button" type="button" onClick={displayRoundResult}>DISPLAY ROUND RESULT <span>›</span></button>}
+                  {result && <p className="defense-complete-note">Funds and exposure have now been updated.</p>}
+                </div>
+              </>
+            )}
+          </div>
+        </section>
       </div>
+
+      {settingsOpen && (
+        <div className="settings-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setSettingsOpen(false)
+        }}>
+          <section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="audio-settings-title">
+            <header className="settings-modal-header">
+              <div>
+                <span className="section-kicker">GAME OPTIONS</span>
+                <h2 id="audio-settings-title">AUDIO SETTINGS</h2>
+              </div>
+              <button className="settings-close" type="button" aria-label="Close settings without saving" onClick={() => setSettingsOpen(false)}>×</button>
+            </header>
+
+            <div className="settings-group">
+              <div className="setting-row setting-toggle-row">
+                <div><strong>BACKGROUND MUSIC</strong><small>Play Max Brhon – Cyberpunk during gameplay.</small></div>
+                <button className={`setting-switch ${draftAudioSettings.musicEnabled ? 'active' : ''}`} type="button" role="switch" aria-checked={draftAudioSettings.musicEnabled} onClick={() => updateDraftAudioSetting('musicEnabled', !draftAudioSettings.musicEnabled)}><span /></button>
+              </div>
+              <label className={`setting-row slider-row ${!draftAudioSettings.musicEnabled ? 'disabled' : ''}`}>
+                <span><strong>MUSIC VOLUME</strong><output>{draftAudioSettings.musicVolume}%</output></span>
+                <input type="range" min="0" max="100" step="1" value={draftAudioSettings.musicVolume} disabled={!draftAudioSettings.musicEnabled} onChange={(event) => updateDraftAudioSetting('musicVolume', Number(event.target.value))} />
+              </label>
+              <div className="setting-row setting-toggle-row compact">
+                <div><strong>LOOP MUSIC</strong><small>Restart the track automatically when it ends.</small></div>
+                <button className={`setting-switch ${draftAudioSettings.loopMusic ? 'active' : ''}`} type="button" role="switch" aria-checked={draftAudioSettings.loopMusic} onClick={() => updateDraftAudioSetting('loopMusic', !draftAudioSettings.loopMusic)}><span /></button>
+              </div>
+              <div className="setting-row setting-toggle-row compact">
+                <div><strong>LOWER MUSIC DURING NARRATION</strong><small>Temporarily lowers music while the scenario voice is speaking.</small></div>
+                <button className={`setting-switch ${draftAudioSettings.duckDuringNarration ? 'active' : ''}`} type="button" role="switch" aria-checked={draftAudioSettings.duckDuringNarration} onClick={() => updateDraftAudioSetting('duckDuringNarration', !draftAudioSettings.duckDuringNarration)}><span /></button>
+              </div>
+            </div>
+
+            <div className="settings-group">
+              <div className="setting-row setting-toggle-row">
+                <div><strong>INTERFACE SOUND EFFECTS</strong><small>Play a short sound when interface buttons are selected.</small></div>
+                <button className={`setting-switch ${draftAudioSettings.soundEffectsEnabled ? 'active' : ''}`} type="button" role="switch" aria-checked={draftAudioSettings.soundEffectsEnabled} onClick={() => updateDraftAudioSetting('soundEffectsEnabled', !draftAudioSettings.soundEffectsEnabled)}><span /></button>
+              </div>
+              <label className={`setting-row slider-row ${!draftAudioSettings.soundEffectsEnabled ? 'disabled' : ''}`}>
+                <span><strong>EFFECTS VOLUME</strong><output>{draftAudioSettings.soundEffectsVolume}%</output></span>
+                <input type="range" min="0" max="100" step="1" value={draftAudioSettings.soundEffectsVolume} disabled={!draftAudioSettings.soundEffectsEnabled} onChange={(event) => updateDraftAudioSetting('soundEffectsVolume', Number(event.target.value))} />
+              </label>
+              <p className="settings-note">Scenario Play, Pause, Replay and Mute controls intentionally do not use interface sound effects.</p>
+            </div>
+
+            <div className="music-credit">
+              <strong>NOW PLAYING</strong>
+              <span>Max Brhon – Cyberpunk [NCS Release] • Music provided by NoCopyrightSounds</span>
+            </div>
+
+            <footer className="settings-modal-footer">
+              <button className="settings-cancel" type="button" onClick={() => setSettingsOpen(false)}>CANCEL</button>
+              <button className="settings-save" type="button" onClick={saveAudioSettings}>SAVE OPTIONS</button>
+            </footer>
+          </section>
+        </div>
+      )}
     </main>
   )
 }

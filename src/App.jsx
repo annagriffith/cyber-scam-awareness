@@ -47,34 +47,23 @@ function App() {
         <header className="topbar">
           <div className="brand-block">
             <div className="brand-logo">BREACH POINT</div>
-
-            <div className="brand-subtitle">
-              SOCIAL ENGINEERING AWARENESS SIMULATION
-            </div>
+            <div className="brand-subtitle">SOCIAL ENGINEERING AWARENESS SIMULATION</div>
           </div>
 
           <div className="exposure-radar" aria-label="Exposure radar">
             <div className="radar-circle">
               <span className="radar-blip" />
             </div>
-
             <div className="radar-legend">
-              <div className="radar-title">
-                EXPOSURE
-                <br />
-                RADAR
-              </div>
-
+              <div className="radar-title">EXPOSURE<br />RADAR</div>
               <div className="legend-item">
                 <span className="dot low" />
                 LOW
               </div>
-
               <div className="legend-item">
                 <span className="dot elevated" />
                 ELEVATED
               </div>
-
               <div className="legend-item">
                 <span className="dot high" />
                 HIGH
@@ -85,20 +74,17 @@ function App() {
 
         <main className="hero-layout">
           <section className="hero-copy">
-            <h1>
-              CAN YOU BANKRUPT THE COMPANY BEFORE YOU&apos;RE DETECTED?
-            </h1>
+            <h1>CAN YOU BANKRUPT THE COMPANY BEFORE YOU&apos;RE DETECTED?</h1>
 
             <p className="hero-description">
-              Choose fictional targets, test social engineering techniques, and
-              learn how organisations can defend themselves.
+              Choose fictional targets, test social engineering techniques, and learn how
+              organisations can defend themselves.
             </p>
 
             <div className="auth-badge">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
               </svg>
-
               AUTHORISED EDUCATIONAL SIMULATION
             </div>
 
@@ -114,10 +100,8 @@ function App() {
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M8 5v14l11-7-11-7Z" />
                 </svg>
-
                 START SIMULATION
               </a>
-
               <a href="/how-to-play.html" className="btn-secondary">
                 HOW TO PLAY
               </a>
@@ -130,7 +114,6 @@ function App() {
 
           <div className="hero-scene" aria-hidden="true">
             <div className="scene-glow" />
-
             <div className="stat-stack">
               <div className="info-panel">
                 <div className="panel-icon">
@@ -139,7 +122,6 @@ function App() {
                     <path d="M12 7v5l3 2" />
                   </svg>
                 </div>
-
                 <div className="panel-copy">
                   <div className="panel-value">$5,000,000</div>
                   <div className="panel-label">COMPANY FUNDS</div>
@@ -152,7 +134,6 @@ function App() {
                     <path d="M12 3l7 3v6c0 4.4-3 8.2-7 10-4-1.8-7-5.6-7-10V6l7-3Z" />
                   </svg>
                 </div>
-
                 <div className="panel-copy">
                   <div className="panel-value">0%</div>
                   <div className="panel-label">EXPOSURE</div>
@@ -166,12 +147,10 @@ function App() {
           {missionCards.map((card) => (
             <article className="feature-card" key={card.title}>
               <div className="card-icon">{card.icon}</div>
-
               <div className="card-copy">
                 <h2>{card.title}</h2>
                 <p>{card.description}</p>
               </div>
-
               <span className="card-arrow" aria-hidden="true">
                 ›
               </span>
