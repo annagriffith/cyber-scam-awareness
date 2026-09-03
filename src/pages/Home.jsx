@@ -41,23 +41,33 @@ export default function Home() {
       <header className="home-header">
         <div className="home-brand">
           <span className="home-brand-name">Breach Point</span>
-          <span className="home-brand-tagline">Social Engineering Awareness Simulation</span>
+          <span className="home-brand-tagline">
+            Social Engineering Awareness Simulation
+          </span>
         </div>
 
         <div className="home-radar" aria-label="Exposure radar">
           <div className="home-radar-circle">
             <span className="home-radar-blip" />
           </div>
+
           <div className="home-radar-legend">
-            <div className="home-radar-title">Exposure<br />Radar</div>
+            <div className="home-radar-title">
+              Exposure
+              <br />
+              Radar
+            </div>
+
             <div className="home-radar-item">
               <span className="home-dot low" />
               Low
             </div>
+
             <div className="home-radar-item">
               <span className="home-dot elevated" />
               Elevated
             </div>
+
             <div className="home-radar-item">
               <span className="home-dot high" />
               High
@@ -69,11 +79,14 @@ export default function Home() {
       <section className="home-hero">
         <div className="home-hero-copy">
           <p className="home-eyebrow">Corporate breach simulation</p>
-          <h1>Can you bankrupt the company before you&apos;re detected?</h1>
+
+          <h1>
+            Can you bankrupt the company before you&apos;re detected?
+          </h1>
 
           <p className="home-intro-copy">
-            Choose fictional targets, test social engineering techniques, and learn how
-            organisations can defend themselves.
+            Choose fictional targets, test social engineering techniques, and
+            learn how organisations can defend themselves.
           </p>
 
           <div className="home-auth-badge">
@@ -84,12 +97,13 @@ export default function Home() {
           </div>
 
           <div className="home-actions">
-            <a href="/game.html" className="primary-button">
+            <Link to="/gameplay" className="primary-button">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M8 5v14l11-7-11-7Z" />
               </svg>
               Start simulation
-            </a>
+            </Link>
+
             <Link to="/how-to-play" className="outline-button">
               How to play
             </Link>
@@ -108,6 +122,7 @@ export default function Home() {
                 <path d="M12 7v5l3 2" />
               </svg>
             </div>
+
             <div>
               <div className="home-stat-value">$5,000,000</div>
               <div className="home-stat-label">Company funds</div>
@@ -120,6 +135,7 @@ export default function Home() {
                 <path d="M12 3l7 3v6c0 4.4-3 8.2-7 10-4-1.8-7-5.6-7-10V6l7-3Z" />
               </svg>
             </div>
+
             <div>
               <div className="home-stat-value">0%</div>
               <div className="home-stat-label">Exposure</div>
@@ -132,10 +148,12 @@ export default function Home() {
         {missionCards.map((card) => (
           <article className="home-flow-card" key={card.title}>
             <div className="home-flow-icon">{card.icon}</div>
+
             <div>
               <h2>{card.title}</h2>
               <p>{card.description}</p>
             </div>
+
             <span className="home-flow-arrow" aria-hidden="true">
               ›
             </span>
@@ -144,8 +162,10 @@ export default function Home() {
       </section>
 
       <footer className="home-disclaimer">
-        <span>Fictional targets</span><i aria-hidden="true" />
-        <span>No user data collected</span><i aria-hidden="true" />
+        <span>Fictional targets</span>
+        <i aria-hidden="true" />
+        <span>No user data collected</span>
+        <i aria-hidden="true" />
         <span>Educational use only</span>
       </footer>
     </main>
