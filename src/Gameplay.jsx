@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './Gameplay.css'
 import jordanPortrait from './assets/targets/jordan-malik.jpg'
 import priyaPortrait from './assets/targets/priya-nandakumar.jpg'
@@ -139,6 +140,7 @@ const getPreferredNarrationVoice = () => {
 }
 
 function Gameplay() {
+  const navigate = useNavigate()
   const [audioSettings, setAudioSettings] = useState({
     musicEnabled: false,
     musicVolume: 22,
@@ -155,6 +157,7 @@ function Gameplay() {
   const [funds, setFunds] = useState(startingFunds)
   const [exposure, setExposure] = useState(0)
   const [turn, setTurn] = useState(0)
+  const [techniqueCounts, setTechniqueCounts] = useState({ phishing: 0, social: 0, deepfake: 0 })
   const [employeeCleared, setEmployeeCleared] = useState(false)
   const [managerCleared, setManagerCleared] = useState(false)
   const [successfulTargetIds, setSuccessfulTargetIds] = useState(() => new Set())
@@ -372,6 +375,7 @@ function Gameplay() {
     stopNarration()
     setSelectedTargetId('jordan'); setSelectedTechnique(''); setFunds(startingFunds)
     setExposure(0); setTurn(0); setEmployeeCleared(false); setManagerCleared(false)
+    setTechniqueCounts({ phishing: 0, social: 0, deepfake: 0 })
     setSuccessfulTargetIds(new Set())
     setLastTargetId(null); setRepeatCount(0); setResult(null)
     setPendingResult(null); setDefenseSelection(null)
@@ -423,8 +427,17 @@ function Gameplay() {
 
     stopNarration()
 
-    setFunds((value) => Math.max(0, value - pendingResult.damage))
-    setExposure((value) => Math.min(100, value + pendingResult.exposureGain))
+    const nextFunds = Math.max(0, funds - pendingResult.damage)
+    const nextExposure = Math.min(100, exposure + pendingResult.exposureGain)
+    const nextTurn = turn + 1
+    const nextTechniqueCounts = {
+      ...techniqueCounts,
+      [selectedTechnique]: techniqueCounts[selectedTechnique] + 1,
+    }
+
+    setFunds(nextFunds)
+    setExposure(nextExposure)
+    setTechniqueCounts(nextTechniqueCounts)
     setLastTargetId(selectedTarget.id)
     setRepeatCount(pendingResult.nextRepeatCount)
 
@@ -436,6 +449,24 @@ function Gameplay() {
 
     setResult(pendingResult)
     setPendingResult(null)
+
+    if (nextExposure >= 100 || nextFunds <= 0) {
+      navigate('/game-over', {
+        state: {
+          reason: nextExposure >= 100 ? 'detected' : 'bankrupt',
+          turnsPlayed: nextTurn,
+          startingFunds,
+          fundsRemaining: nextFunds,
+          fundsRemoved: startingFunds - nextFunds,
+          exposure: nextExposure,
+          exposureGain: pendingResult.exposureGain,
+          finalTarget: selectedTarget.name,
+          technique: techniques.find((item) => item.id === selectedTechnique)?.title ?? 'Technique',
+          subtype: selectedOption.label,
+          techniqueCounts: nextTechniqueCounts,
+        },
+      })
+    }
   }
 
   const nextRound = () => {
