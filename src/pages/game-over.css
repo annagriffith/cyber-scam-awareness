@@ -43,12 +43,12 @@
   width: min(100%, 1600px);
   height: calc(100vh - 6px);
   margin: 0 auto;
-  padding: clamp(12px, 1.6vh, 18px) clamp(14px, 1.4vw, 20px) clamp(8px, 1.1vh, 12px);
+  padding: clamp(14px, 2vh, 20px) clamp(22px, 5vw, 58px) clamp(8px, 1.1vh, 12px);
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-rows: auto minmax(88px, .8fr) auto auto minmax(178px, 1.36fr) auto auto auto;
-  gap: clamp(5px, .85vh, 8px);
+  grid-template-rows: auto minmax(118px, .9fr) auto auto minmax(204px, 1.22fr) minmax(92px, .65fr) auto auto;
+  gap: clamp(5px, .9vh, 8px);
   border: 1px solid rgba(171, 231, 255, .58);
   background:
     linear-gradient(90deg, rgba(1, 10, 22, .96), rgba(1, 12, 25, .84) 56%, rgba(1, 10, 20, .9)),
@@ -109,13 +109,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(16px, 2vw, 26px);
+  gap: clamp(22px, 2.4vw, 32px);
   text-align: left;
 }
 
 .game-over-alert {
-  width: clamp(78px, 10.5vh, 116px);
-  height: clamp(78px, 10.5vh, 116px);
+  width: clamp(100px, 15vh, 126px);
+  height: clamp(100px, 15vh, 126px);
   display: grid;
   place-items: center;
   color: var(--red);
@@ -129,7 +129,7 @@
 .game-over-hero h1 {
   margin: 0;
   color: #ff5a32;
-  font-size: clamp(2.5rem, 4.7vw, 4.7rem);
+  font-size: clamp(3.15rem, 4.9vw, 5.05rem);
   line-height: .9;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -139,7 +139,7 @@
 .game-over-status {
   margin: clamp(3px, .8vh, 8px) 0 0;
   color: #ff5a32;
-  font-size: clamp(1.35rem, 2vw, 2rem);
+  font-size: clamp(1.55rem, 2.1vw, 2.08rem);
   letter-spacing: .13em;
   text-transform: uppercase;
 }
@@ -147,7 +147,7 @@
 .game-over-reason {
   margin: clamp(2px, .65vh, 6px) 0 0;
   color: #e3edf5;
-  font-size: .95rem;
+  font-size: clamp(.82rem, 1.25vw, .95rem);
 }
 
 .game-over-meter {
@@ -213,7 +213,7 @@
 
 .game-over-panel {
   min-height: 0;
-  padding: clamp(11px, 1.45vh, 16px) clamp(14px, 1.35vw, 20px);
+  padding: clamp(14px, 2vh, 18px) clamp(16px, 1.6vw, 22px);
   overflow: hidden;
 }
 
@@ -228,7 +228,7 @@
 }
 
 .game-over-panel-title.danger { color: var(--red); }
-.why-panel p { max-width: 620px; margin: clamp(5px, .75vh, 8px) 0 clamp(10px, 1.35vh, 18px) clamp(36px, 4vw, 64px); color: #dce6ee; font-size: clamp(.75rem, 1.35vh, .83rem); }
+.why-panel p { max-width: 620px; margin: clamp(6px, .85vh, 9px) 0 clamp(11px, 1.45vh, 18px) clamp(40px, 4vw, 64px); color: #dce6ee; font-size: clamp(.78rem, 1.45vh, .86rem); }
 
 .final-turn {
   display: grid;
@@ -249,8 +249,8 @@
 
 .final-turn div:first-child { border-left: 0; padding-left: 0; }
 .final-turn svg { grid-row: span 2; width: 34px; height: 34px; color: var(--cyan); }
-.final-turn span { color: var(--cyan); font-size: .62rem; letter-spacing: .09em; text-transform: uppercase; }
-.final-turn strong { overflow: hidden; text-overflow: ellipsis; color: #f3f7fc; font-size: .82rem; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
+.final-turn span { color: var(--cyan); font-size: .66rem; letter-spacing: .09em; text-transform: uppercase; }
+.final-turn strong { overflow: hidden; text-overflow: ellipsis; color: #f3f7fc; font-size: .88rem; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
 
 .final-exposure {
   margin-top: clamp(8px, 1.15vh, 14px);
@@ -264,7 +264,7 @@
   text-transform: uppercase;
 }
 
-.final-exposure span { flex: 1; font-size: 1.1rem; letter-spacing: .08em; }
+.final-exposure span { flex: 1; font-size: 1.2rem; letter-spacing: .08em; }
 .final-exposure strong { font-size: 1rem; letter-spacing: .06em; }
 
 .summary-panel dl { margin: clamp(5px, .75vh, 8px) 0 clamp(8px, 1.15vh, 14px); }
@@ -279,8 +279,8 @@
   background: rgba(2, 15, 31, .4);
 }
 .summary-panel dl div:last-child { border-bottom: 1px solid rgba(71, 153, 211, .16); }
-.summary-panel dt { color: #dce6ee; font-size: .74rem; letter-spacing: .09em; text-transform: uppercase; }
-.summary-panel dd { margin: 0; color: var(--cyan); font-size: 1rem; }
+.summary-panel dt { color: #dce6ee; font-size: .78rem; letter-spacing: .09em; text-transform: uppercase; }
+.summary-panel dd { margin: 0; color: var(--cyan); font-size: 1.05rem; }
 .danger-text { color: var(--red) !important; }
 
 .technique-summary {
@@ -302,12 +302,12 @@
 
 .technique-summary div:first-child { border-left: 0; }
 .technique-summary svg { width: clamp(26px, 3.6vh, 34px); height: clamp(26px, 3.6vh, 34px); }
-.technique-summary span { color: #e4edf6; font-size: .63rem; letter-spacing: .08em; text-transform: uppercase; }
-.technique-summary strong { font-size: 1rem; }
+.technique-summary span { color: #e4edf6; font-size: .67rem; letter-spacing: .08em; text-transform: uppercase; }
+.technique-summary strong { font-size: 1.08rem; }
 
 .takeaway-panel {
   margin-top: 0;
-  padding: clamp(10px, 1.25vh, 14px) clamp(14px, 1.35vw, 20px);
+  padding: clamp(12px, 1.7vh, 15px) clamp(18px, 1.8vw, 24px);
   display: grid;
   grid-template-columns: 58px 1fr;
   gap: 16px;
@@ -316,8 +316,8 @@
 }
 
 .takeaway-panel > svg { width: clamp(44px, 5.8vh, 58px); height: clamp(44px, 5.8vh, 58px); color: #25b8ff; }
-.takeaway-panel h2 { margin: 0; color: var(--cyan); font-size: 1.05rem; letter-spacing: .12em; text-transform: uppercase; }
-.takeaway-panel p { margin: 4px 0 0; color: #e5edf5; font-size: .84rem; }
+.takeaway-panel h2 { margin: 0; color: var(--cyan); font-size: 1.12rem; letter-spacing: .12em; text-transform: uppercase; }
+.takeaway-panel p { margin: 4px 0 0; color: #e5edf5; font-size: .88rem; }
 .takeaway-panel ul { margin: clamp(5px, .8vh, 8px) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: clamp(5px, .8vh, 10px) 38px; list-style: none; }
 .takeaway-panel li { color: #dfe8f0; font-size: .78rem; }
 .takeaway-panel li::before { content: '✓'; margin-right: 8px; color: var(--cyan); }
@@ -330,7 +330,7 @@
 }
 
 .game-over-actions a {
-  min-height: clamp(40px, 5.4vh, 48px);
+  min-height: clamp(45px, 6.8vh, 52px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -339,7 +339,7 @@
   border-radius: 7px;
   background: rgba(3, 20, 39, .66);
   color: var(--cyan);
-  font-size: .94rem;
+  font-size: 1rem;
   letter-spacing: .11em;
   text-transform: uppercase;
 }

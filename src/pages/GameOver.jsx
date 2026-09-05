@@ -28,16 +28,16 @@ const Icon = ({ type }) => (
 
 const defaultSummary = {
   reason: 'detected',
-  turnsPlayed: 0,
+  turnsPlayed: 6,
   startingFunds,
-  fundsRemaining: startingFunds,
-  fundsRemoved: 0,
+  fundsRemaining: 2_400_000,
+  fundsRemoved: 2_600_000,
   exposure: 100,
-  exposureGain: 0,
-  finalTarget: 'Unknown target',
-  technique: 'Technique',
-  subtype: 'Unknown type',
-  techniqueCounts: { phishing: 0, social: 0, deepfake: 0 },
+  exposureGain: 22,
+  finalTarget: 'Alex Morgan',
+  technique: 'Deepfake',
+  subtype: 'Voice call',
+  techniqueCounts: { phishing: 3, social: 2, deepfake: 1 },
 }
 
 export default function GameOver() {
