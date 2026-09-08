@@ -450,10 +450,13 @@ function Gameplay() {
     setResult(pendingResult)
     setPendingResult(null)
 
-    if (nextExposure >= 100 || nextFunds <= 0) {
-      navigate('/game-over', {
+    const ceoTakedown = pendingResult.isStrong && selectedTarget.id === 'marcus'
+    const won = nextFunds <= 0 || ceoTakedown
+
+    if (won || nextExposure >= 100) {
+      navigate(won ? '/victory' : '/game-over', {
         state: {
-          reason: nextExposure >= 100 ? 'detected' : 'bankrupt',
+          reason: !won ? 'detected' : ceoTakedown ? 'ceo' : 'bankrupt',
           turnsPlayed: nextTurn,
           startingFunds,
           fundsRemaining: nextFunds,
