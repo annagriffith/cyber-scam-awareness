@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import EmailPhishingModule from './phishing/EmailPhishingModule.jsx'
 import SmsPhishingModule from './phishing/SmsPhishingModule.jsx'
 import VishingModule from './phishing/VishingModule.jsx'
+import VideoDeepfakeModule from './deepfake/VideoDeepfakeModule.jsx'
 import { learningModuleCatalog } from './trainingRegistry.js'
 import './TrainingModules.css'
 
@@ -131,6 +132,7 @@ const TrainingLibrary = forwardRef(function TrainingLibrary({ completedModuleIds
       {activeModuleId === 'email' && <EmailPhishingModule completed={completedModuleIds.has('email')} onComplete={() => completeModule('email')} onClose={closeModule} />}
       {activeModuleId === 'sms' && <SmsPhishingModule completed={completedModuleIds.has('sms')} onComplete={() => completeModule('sms')} onClose={closeModule} />}
       {activeModuleId === 'vishing' && <VishingModule completed={completedModuleIds.has('vishing')} onComplete={() => completeModule('vishing')} onClose={closeModule} onAudioChange={onAudioChange} />}
+        {activeModuleId === 'video-deepfake' && <VideoDeepfakeModule completed={completedModuleIds.has('video-deepfake')} onComplete={() => completeModule('video-deepfake')} onClose={closeModule} />}
     </>
   )
 })

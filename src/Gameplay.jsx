@@ -321,7 +321,8 @@ function Gameplay() {
 
 
   const requiredModuleForAttack = (techniqueId, subtypeId) => (
-    techniqueId === 'phishing' ? attackTrainingRequirements[subtypeId] ?? null : null
+    attackTrainingRequirements[subtypeId] ?? null
+    
   )
 
   const isAttackTypeLocked = (techniqueId, subtypeId) => {
