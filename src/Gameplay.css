@@ -91,7 +91,7 @@ button, select, input { font-family: var(--hud-font); }
 }
 
 .game-subtitle { margin: 7px 0 0 2px; }
-.header-actions { display: flex; gap: 12px; }
+.header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
 
 .utility-button {
   min-height: 38px;
@@ -108,7 +108,16 @@ button, select, input { font-family: var(--hud-font); }
 }
 
 .utility-button:hover, .utility-button:focus-visible { border-color: var(--cyan); outline: none; }
-.settings-icon, .restart-icon { font-size: 1.35rem; }
+.settings-icon, .restart-icon, .navigation-icon { font-size: 1.35rem; line-height: 1; }
+.navigation-icon.help-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: .8rem;
+}
 
 .audio-status-dot {
   width: 8px;
@@ -569,6 +578,25 @@ select:focus-visible { box-shadow: 0 0 0 2px rgba(0, 214, 255, .35); }
 .settings-cancel { border: 1px solid rgba(100, 146, 179, .5); background: rgba(2, 15, 31, .72); }
 .settings-save { border: 1px solid #36dcff; background: linear-gradient(90deg, #0768d0, #0b9ecc); box-shadow: 0 0 18px rgba(0, 178, 231, .2); }
 .settings-cancel:hover, .settings-cancel:focus-visible, .settings-save:hover, .settings-save:focus-visible { outline: none; filter: brightness(1.14); border-color: var(--cyan); }
+
+.idle-backdrop { z-index: 1200; }
+.idle-modal { width: min(100%, 540px); }
+.settings-modal.idle-modal::before { content: 'SESSION // TIMEOUT PROTOCOL'; }
+.idle-modal-content { padding: 24px 22px 6px; }
+.idle-modal-content p { margin: 0 0 12px; color: #a9bed1; font-size: .72rem; line-height: 1.65; }
+.idle-modal-content strong { color: var(--amber); }
+.idle-modal-actions { justify-content: space-between; }
+
+@media (max-width: 900px) {
+  .game-header { align-items: stretch; flex-direction: column; }
+  .header-actions { justify-content: flex-start; }
+}
+
+@media (max-width: 560px) {
+  .header-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .utility-button { justify-content: center; padding-inline: 10px; }
+  .idle-modal-actions { align-items: stretch; flex-direction: column-reverse; }
+}
 
 /* Cyberpunk HUD refinement */
 .cyber-atmosphere {

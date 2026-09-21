@@ -48,7 +48,7 @@ export const learningModuleCatalog = [
   {
     id: 'voice-clone', number: '08', category: 'DEEPFAKE', theme: 'deepfake', icon: '◖', title: 'Voice-Clone Deepfake',
     description: 'Learn why a familiar voice is not proof of identity and practise independent verification techniques.',
-    format: '6 interactive activities', available: true,
+    format: '5 interactive activities', available: true,
   },
   {
     id: 'video-deepfake', number: '09', category: 'DEEPFAKE', theme: 'deepfake', icon: '◉', title: 'Video / Image Deepfake',

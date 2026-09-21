@@ -103,6 +103,8 @@ const intelUnlocks = {
 }
 
 const startingFunds = 5_000_000
+const idleWarningDelay = 10 * 60 * 1000
+const idleReturnDelay = 60 * 1000
 const formatMoney = (value) => new Intl.NumberFormat('en-AU', {
   style: 'currency', currency: 'AUD', maximumFractionDigits: 0,
 }).format(value)
@@ -143,6 +145,10 @@ function Gameplay() {
   const clickAudioContextRef = useRef(null)
   const narrationVoiceRef = useRef(null)
   const utteranceRef = useRef(null)
+  const idleWarningOpenRef = useRef(false)
+  const [idleWarningOpen, setIdleWarningOpen] = useState(false)
+  const [idleSecondsRemaining, setIdleSecondsRemaining] = useState(idleReturnDelay / 1000)
+  const [idleSessionKey, setIdleSessionKey] = useState(0)
 
   const roundLocked = Boolean(pendingResult || result)
 
@@ -234,6 +240,57 @@ function Gameplay() {
       clickAudioContextRef.current?.close()
     }
   }, [])
+
+  useEffect(() => {
+    let warningTimer
+    let returnTimer
+    let countdownTimer
+
+    const returnToHome = () => navigate('/', { replace: true })
+
+    const showIdleWarning = () => {
+      idleWarningOpenRef.current = true
+      setIdleWarningOpen(true)
+      setIdleSecondsRemaining(idleReturnDelay / 1000)
+
+      countdownTimer = window.setInterval(() => {
+        setIdleSecondsRemaining((seconds) => Math.max(0, seconds - 1))
+      }, 1000)
+      returnTimer = window.setTimeout(returnToHome, idleReturnDelay)
+    }
+
+    const scheduleIdleWarning = () => {
+      window.clearTimeout(warningTimer)
+      warningTimer = window.setTimeout(showIdleWarning, idleWarningDelay)
+    }
+
+    const registerActivity = () => {
+      if (!idleWarningOpenRef.current) scheduleIdleWarning()
+    }
+
+    const activityEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll']
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, registerActivity, { passive: true }))
+    scheduleIdleWarning()
+
+    return () => {
+      window.clearTimeout(warningTimer)
+      window.clearTimeout(returnTimer)
+      window.clearInterval(countdownTimer)
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, registerActivity))
+    }
+  }, [idleSessionKey, navigate])
+
+  const continueAfterIdle = () => {
+    idleWarningOpenRef.current = false
+    setIdleWarningOpen(false)
+    setIdleSecondsRemaining(idleReturnDelay / 1000)
+    setIdleSessionKey((key) => key + 1)
+  }
+
+  const returnHome = () => {
+    idleWarningOpenRef.current = false
+    navigate('/', { replace: true })
+  }
 
   const openAudioSettings = () => {
     setDraftAudioSettings(audioSettings)
@@ -532,6 +589,12 @@ function Gameplay() {
               onAudioChange={setTrainingAudioPlaying}
               onBeforeModuleOpen={stopNarration}
             />
+            <button className="utility-button" type="button" onClick={returnHome}>
+              <span className="navigation-icon" aria-hidden="true">⌂</span> HOME
+            </button>
+            <button className="utility-button" type="button" onClick={() => navigate('/how-to-play')}>
+              <span className="navigation-icon help-icon" aria-hidden="true">?</span> HOW TO PLAY
+            </button>
             <button className="utility-button" type="button" onClick={openAudioSettings} aria-haspopup="dialog">
               <span className="settings-icon">⚙</span> SETTINGS
               <span className={`audio-status-dot ${audioSettings.musicEnabled ? 'active' : ''}`} aria-label={`Music ${audioSettings.musicEnabled ? 'on' : 'off'}`} />
@@ -774,6 +837,26 @@ function Gameplay() {
             <footer className="settings-modal-footer">
               <button className="settings-cancel" type="button" onClick={() => setSettingsOpen(false)}>CANCEL</button>
               <button className="settings-save" type="button" onClick={saveAudioSettings}>SAVE OPTIONS</button>
+            </footer>
+          </section>
+        </div>
+      )}
+      {idleWarningOpen && (
+        <div className="settings-backdrop idle-backdrop" role="presentation">
+          <section className="settings-modal idle-modal" role="alertdialog" aria-modal="true" aria-labelledby="idle-warning-title" aria-describedby="idle-warning-description">
+            <header className="settings-modal-header">
+              <div>
+                <span className="section-kicker">SESSION STATUS // IDLE WARNING</span>
+                <h2 id="idle-warning-title">ARE YOU STILL THERE?</h2>
+              </div>
+            </header>
+            <div className="idle-modal-content">
+              <p id="idle-warning-description">You have been idle for 10 minutes. Your current game will return to the home page in <strong>{idleSecondsRemaining} seconds</strong>.</p>
+              <p>Select continue to keep playing.</p>
+            </div>
+            <footer className="settings-modal-footer idle-modal-actions">
+              <button className="settings-cancel" type="button" onClick={returnHome}>RETURN HOME</button>
+              <button className="settings-save" type="button" onClick={continueAfterIdle} autoFocus>CONTINUE SESSION</button>
             </footer>
           </section>
         </div>

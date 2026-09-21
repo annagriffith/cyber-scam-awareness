@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import VoiceCloneDemo from './VoiceCloneDemo.jsx'
 import {
   requiredVoiceRequestClues,
   responseOptions,
@@ -11,7 +10,7 @@ import {
 } from './voiceCloneData.js'
 import './voice-clone-module.css'
 
-const moduleSteps = ['HOW IT WORKS', 'LIVE DEMO', 'INVESTIGATE', 'RESPOND', 'VERIFY', 'RESULTS']
+const moduleSteps = ['HOW IT WORKS', 'INVESTIGATE', 'RESPOND', 'VERIFY', 'RESULTS']
 
 function arraysMatch(left, right) {
   return left.length === right.length && left.every((value, index) => value === right[index])
@@ -23,7 +22,6 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
   const [step, setStep] = useState(0)
   const [cloneSequence, setCloneSequence] = useState([])
   const [cloneSequenceChecked, setCloneSequenceChecked] = useState(false)
-  const [demoWasSkipped, setDemoWasSkipped] = useState(false)
   const [selectedClues, setSelectedClues] = useState(() => new Set())
   const [incorrectClueSelections, setIncorrectClueSelections] = useState(() => new Set())
   const [clueFeedbackId, setClueFeedbackId] = useState(null)
@@ -123,25 +121,6 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
     onComplete('voice-clone')
   }
 
-  if (step === 1) {
-    return (
-      <div className="voice-module-backdrop">
-        <section className="voice-module-shell" role="dialog" aria-modal="true" aria-labelledby="voice-module-title">
-          <ModuleHeader step={step} progress={progress} onClose={onClose} />
-          <main className="voice-module-content">
-            <VoiceCloneDemo
-              onComplete={() => setStep(2)}
-              onSkip={() => {
-                setDemoWasSkipped(true)
-                setStep(2)
-              }}
-            />
-          </main>
-        </section>
-      </div>
-    )
-  }
-
   return (
     <div className="voice-module-backdrop">
       <section className="voice-module-shell" role="dialog" aria-modal="true" aria-labelledby="voice-module-title">
@@ -165,11 +144,13 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
               <div>
                 {voiceCloneStageOrder.map((_, index) => {
                   const selected = voiceCloneStages.find((stage) => stage.id === cloneSequence[index])
+                  const positionCorrect = selected?.id === voiceCloneStageOrder[index]
                   return selected
-                    ? <button type="button" key={selected.id} onClick={() => { setCloneSequence((current) => current.filter((id) => id !== selected.id)); setCloneSequenceChecked(false) }}><span>{index + 1}</span><strong>{selected.title}</strong><i>×</i></button>
+                    ? <button type="button" className={`voice-position-card ${positionCorrect ? 'correct-position' : 'incorrect-position'}`} key={selected.id} aria-label={`${selected.title}, position ${index + 1}, ${positionCorrect ? 'correct' : 'incorrect'} position. Select to remove.`} onClick={() => { setCloneSequence((current) => current.filter((id) => id !== selected.id)); setCloneSequenceChecked(false) }}><span>{index + 1}</span><strong>{selected.title}</strong><i aria-hidden="true">{positionCorrect ? '✓' : '×'}</i></button>
                     : <div className="voice-empty-slot" key={`clone-slot-${index}`}><span>{index + 1}</span><small>Select the next stage</small></div>
                 })}
               </div>
+              {cloneSequence.length > 0 && <p className="voice-position-guidance" role="status">Green means the stage is in the correct position. Red means that position should be reconsidered; select it to remove it and try again.</p>}
             </div>
 
             {cloneSequenceChecked && (
@@ -182,16 +163,14 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
             <StageActions>
               {!cloneSequenceChecked
                 ? <button className="voice-module-primary" type="button" disabled={cloneSequence.length !== voiceCloneStageOrder.length} onClick={checkCloneSequence}>CHECK SEQUENCE</button>
-                : <button className="voice-module-primary" type="button" onClick={() => setStep(1)}>CONTINUE TO LIVE DEMO</button>}
+                : <button className="voice-module-primary" type="button" onClick={() => setStep(1)}>CONTINUE TO INVESTIGATION</button>}
             </StageActions>
           </div>
         )}
 
-        {step === 2 && (
+        {step === 1 && (
           <div className="voice-module-stage">
-            <StageHeading kicker="STEP 3 // INVESTIGATE THE REQUEST" title="The voice sounds right. Does the request?" description="Marcus appears to call an employee directly. Select every contextual warning sign. Do not rely on whether the audio sounds robotic." />
-
-            {demoWasSkipped && <div className="voice-demo-skipped">The live demonstration was skipped. You can still complete every educational activity.</div>}
+            <StageHeading kicker="STEP 2 // INVESTIGATE THE REQUEST" title="The voice sounds right. Does the request?" description="Marcus appears to call an employee directly. Select every contextual warning sign. Do not rely on whether the audio sounds robotic." />
 
             <article className="voice-request-card">
               <header><span className="voice-caller-avatar">MR</span><div><strong>MARCUS REYES</strong><small>Incoming voice message • Identity unverified</small></div><span>0:18</span></header>
@@ -202,7 +181,8 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
             <div className="voice-clue-grid">
               {voiceRequestClues.map((clue) => {
                 const selected = selectedClues.has(clue.id)
-                return <button type="button" className={selected ? 'selected' : ''} key={clue.id} onClick={() => toggleClue(clue)}><span>{selected ? '✓' : '?'}</span>{clue.label}</button>
+                const incorrect = incorrectClueSelections.has(clue.id)
+                return <button type="button" className={selected ? 'correct-selection' : incorrect ? 'incorrect-selection' : ''} key={clue.id} onClick={() => toggleClue(clue)}><span>{selected ? '✓' : incorrect ? '×' : '?'}</span>{clue.label}</button>
               })}
             </div>
 
@@ -214,14 +194,14 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
             <div className="voice-clue-progress"><strong>{selectedWarningCount} / {requiredVoiceRequestClues.length}</strong><span>contextual warning signs found</span></div>
 
             <StageActions>
-              <button className="voice-module-primary" type="button" disabled={!selectedClues.size && !incorrectClueSelections.size} onClick={() => setStep(3)}>SUBMIT AND CONTINUE</button>
+              <button className="voice-module-primary" type="button" disabled={!selectedClues.size && !incorrectClueSelections.size} onClick={() => setStep(2)}>SUBMIT AND CONTINUE</button>
             </StageActions>
           </div>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <div className="voice-module-stage">
-            <StageHeading kicker="STEP 4 // MAKE THE DECISION" title="How should the employee respond?" description="The request is urgent and the voice is convincing. Choose the response that provides the strongest defence." />
+            <StageHeading kicker="STEP 3 // MAKE THE DECISION" title="How should the employee respond?" description="The request is urgent and the voice is convincing. Choose the response that provides the strongest defence." />
 
             <div className="voice-response-options">
               {responseOptions.map((option, index) => (
@@ -239,15 +219,15 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
             )}
 
             <StageActions>
-              <button className="voice-module-secondary" type="button" onClick={() => setStep(2)}>BACK</button>
-              <button className="voice-module-primary" type="button" disabled={!selectedResponse} onClick={() => setStep(4)}>BUILD THE VERIFICATION PATH</button>
+              <button className="voice-module-secondary" type="button" onClick={() => setStep(1)}>BACK</button>
+              <button className="voice-module-primary" type="button" disabled={!selectedResponse} onClick={() => setStep(3)}>BUILD THE VERIFICATION PATH</button>
             </StageActions>
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="voice-module-stage">
-            <StageHeading kicker="STEP 5 // RESTORE TRUST" title="Build the independent verification path" description="Select the actions in the safest order. Verification must leave the communication channel controlled by the suspected attacker." />
+            <StageHeading kicker="STEP 4 // RESTORE TRUST" title="Build the independent verification path" description="Select the actions in the safest order. Each selected position turns green when correct or red when it needs another look." />
 
             <div className="voice-verification-layout">
               <div className="voice-verification-actions">
@@ -260,10 +240,12 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
                 <header><strong>YOUR VERIFICATION PATH</strong><button type="button" disabled={!verificationSequence.length} onClick={() => { setVerificationSequence([]); setVerificationChecked(false) }}>RESET</button></header>
                 {verificationOrder.map((_, index) => {
                   const selected = verificationActions.find((action) => action.id === verificationSequence[index])
+                  const positionCorrect = selected?.id === verificationOrder[index]
                   return selected
-                    ? <button type="button" key={selected.id} onClick={() => removeVerificationAction(selected.id)}><span>{index + 1}</span><div><strong>{selected.title}</strong><small>{selected.description}</small></div><i>×</i></button>
+                    ? <button type="button" className={`voice-position-card ${positionCorrect ? 'correct-position' : 'incorrect-position'}`} key={selected.id} aria-label={`${selected.title}, position ${index + 1}, ${positionCorrect ? 'correct' : 'incorrect'} position. Select to remove.`} onClick={() => removeVerificationAction(selected.id)}><span>{index + 1}</span><div><strong>{selected.title}</strong><small>{selected.description}</small></div><i aria-hidden="true">{positionCorrect ? '✓' : '×'}</i></button>
                     : <div className="voice-empty-slot" key={`verification-slot-${index}`}><span>{index + 1}</span><small>Select the next defensive action</small></div>
                 })}
+                {verificationSequence.length > 0 && <p className="voice-position-guidance" role="status">Green actions are correctly positioned. Select any red action to remove it, then choose a safer action for that point in the process.</p>}
               </div>
             </div>
 
@@ -272,18 +254,18 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
             <StageActions>
               {!verificationChecked
                 ? <button className="voice-module-primary" type="button" disabled={verificationSequence.length !== verificationOrder.length} onClick={() => setVerificationChecked(true)}>CHECK VERIFICATION PATH</button>
-                : <button className="voice-module-primary" type="button" onClick={() => setStep(5)}>VIEW RESULTS</button>}
+                : <button className="voice-module-primary" type="button" onClick={() => setStep(4)}>VIEW RESULTS</button>}
             </StageActions>
           </div>
         )}
 
-        {step === 5 && (
+        {step === 4 && (
           <div className="voice-module-stage voice-module-summary">
-            <StageHeading kicker="STEP 6 // YOUR RESULTS" title={`${resultScore} of ${results.length} safe decisions`} description="Review your decisions below. Incorrect answers do not prevent completion—they show where a real attacker could apply pressure." />
+            <StageHeading kicker="STEP 5 // YOUR RESULTS" title={`${resultScore} of ${results.length} safe decisions`} description="Review your decisions below. Incorrect answers do not prevent completion—they show where a real attacker could apply pressure." />
 
             <div className="voice-results-overview" aria-label={`Result: ${resultScore} out of ${results.length}`}>
               <div className="voice-results-score"><strong>{resultScore}</strong><span>/ {results.length}</span></div>
-              <div><strong>{resultScore === results.length ? 'Excellent threat response' : resultScore >= 2 ? 'Good start—review the highlighted lessons' : 'Review the safe response before continuing'}</strong><p>The demonstration was {demoWasSkipped ? 'skipped and was not graded.' : 'completed and was not graded.'}</p></div>
+              <div><strong>{resultScore === results.length ? 'Excellent threat response' : resultScore >= 2 ? 'Good start—review the highlighted lessons' : 'Review the safe response before continuing'}</strong><p>You can complete the module even when an answer needs review.</p></div>
             </div>
 
             <div className="voice-results-list">
@@ -304,7 +286,7 @@ function VoiceCloneModule({ onComplete = () => {}, onClose = () => {} }) {
               <article><span>03</span><strong>Verify and report</strong><p>Use established contact details, follow approval procedures and report the suspected impersonation.</p></article>
             </div>
 
-            <div className="voice-module-complete"><span>✓</span><div><strong>VOICE-CLONE MODULE COMPLETE</strong><p>Your temporary demonstration audio has been cleared. You are ready to return to the Training Library.</p></div></div>
+            <div className="voice-module-complete"><span>✓</span><div><strong>VOICE-CLONE MODULE COMPLETE</strong><p>You are ready to return to the Training Library.</p></div></div>
 
             <StageActions>
               <button className="voice-module-primary" type="button" onClick={finishModule}>COMPLETE MODULE</button>
