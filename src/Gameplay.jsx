@@ -14,6 +14,130 @@ import useTrainingProgress from './training/useTrainingProgress.js'
 import { attackTrainingRequirements, learningModuleCatalog } from './training/trainingRegistry.js'
 import { getPreferredNarrationVoice } from './training/narrationVoices.js'
 
+// Scenario/briefing narration is generated live per selected target (the text
+// is dynamic, not a fixed script), so it uses Kokoro TTS directly in the
+// browser (kokoro-js — no Python/pip required) rather than pre-baked audio
+// files. Generation runs in narrationWorker.js on a separate thread — Kokoro's
+// generate() call is real WASM computation, and running it on the main
+// thread was blocking UI responsiveness (button presses lagging) while it
+// worked. This file just sends { text, voice } to the worker and gets a
+// { blob } back; the worker owns loading/caching the model itself.
+// NOTE: American ('af_'/'am_') voices are the most reliably supported path in
+// kokoro-js today. British ('bf_'/'bm_') voices can throw "Invalid language
+// identifier" errors on some kokoro-js/model builds — if you want a British
+// voice, test it in isolation first before wiring it back in here.
+const NARRATION_VOICE = 'af_bella'
+
+let narrationWorker = null
+let narrationRequestId = 0
+const narrationWorkerRequests = new Map()
+
+function getNarrationWorker() {
+  if (!narrationWorker) {
+    narrationWorker = new Worker(new URL('./narrationWorker.js', import.meta.url), { type: 'module' })
+    narrationWorker.onmessage = (event) => {
+      const { id, blob, error } = event.data
+      const pending = narrationWorkerRequests.get(id)
+      if (!pending) return
+      narrationWorkerRequests.delete(id)
+      if (error) pending.reject(new Error(error))
+      else pending.resolve(blob)
+    }
+    narrationWorker.onerror = (event) => {
+      // The worker itself failed to load/run — fail every request currently
+      // waiting on it rather than leaving them hanging forever.
+      narrationWorkerRequests.forEach(({ reject }) => reject(new Error(event.message || 'Narration worker failed')))
+      narrationWorkerRequests.clear()
+    }
+  }
+  return narrationWorker
+}
+
+function generateNarrationBlob(text, voice) {
+  const worker = getNarrationWorker()
+  const id = ++narrationRequestId
+  return new Promise((resolve, reject) => {
+    narrationWorkerRequests.set(id, { resolve, reject })
+    worker.postMessage({ id, text, voice })
+  })
+}
+
+// If Kokoro's first chunk isn't ready within this window — i.e. it's a
+// genuine cache miss and generation is actually underway, not just an
+// IndexedDB lookup — we speak immediately with the browser's built-in
+// speechSynthesis instead, so the first-ever play of a line isn't stuck
+// waiting on Kokoro. It keeps generating/caching in the background
+// regardless, so every later play of the same line uses Kokoro.
+const KOKORO_FIRST_CHUNK_TIMEOUT_MS = 400
+
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Kokoro narration timed out')), ms)
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value) },
+      (error) => { clearTimeout(timer); reject(error) },
+    )
+  })
+}
+
+// Persists generated narration clips across page reloads via IndexedDB
+// (localStorage can't hold binary audio at any useful size, and blob: URLs
+// from URL.createObjectURL() only live for the current page load). Once a
+// chunk's Blob is found here, playback skips Kokoro/WASM entirely for it —
+// only genuinely new/changed lines ever need the model loaded at all.
+//
+// Bump NARRATION_CACHE_VERSION to invalidate every previously cached clip
+// (e.g. after changing voice or chunking behaviour) — old entries are
+// simply never read again after that; they don't need to be deleted.
+const NARRATION_CACHE_VERSION = 1
+const NARRATION_DB_NAME = 'breach-point-narration'
+const NARRATION_STORE_NAME = 'chunks'
+
+function openNarrationDb() {
+  return new Promise((resolve, reject) => {
+    if (!('indexedDB' in window)) {
+      reject(new Error('IndexedDB unavailable'))
+      return
+    }
+    const request = indexedDB.open(NARRATION_DB_NAME, 1)
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(NARRATION_STORE_NAME)) {
+        request.result.createObjectStore(NARRATION_STORE_NAME)
+      }
+    }
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+async function readCachedChunkBlob(key) {
+  try {
+    const db = await openNarrationDb()
+    return await new Promise((resolve, reject) => {
+      const store = db.transaction(NARRATION_STORE_NAME, 'readonly').objectStore(NARRATION_STORE_NAME)
+      const request = store.get(key)
+      request.onsuccess = () => resolve(request.result ?? null)
+      request.onerror = () => reject(request.error)
+    })
+  } catch {
+    return null // Private browsing / unsupported browser — just fall back to generating.
+  }
+}
+
+async function writeCachedChunkBlob(key, blob) {
+  try {
+    const db = await openNarrationDb()
+    await new Promise((resolve, reject) => {
+      const store = db.transaction(NARRATION_STORE_NAME, 'readwrite').objectStore(NARRATION_STORE_NAME)
+      store.put(blob, key)
+      store.transaction.oncomplete = () => resolve()
+      store.transaction.onerror = () => reject(store.transaction.error)
+    })
+  } catch {
+    // Non-fatal — narration still plays for this session, it just won't persist.
+  }
+}
+
 const targets = [
   {
     id: 'jordan', name: 'Jordan Malik', initials: 'JM', role: 'Service Desk', tier: 1,
@@ -137,12 +261,14 @@ function Gameplay() {
   const [result, setResult] = useState(null)
   const [pendingResult, setPendingResult] = useState(null)
   const [defenseSelection, setDefenseSelection] = useState(null)
-  const [narrationState, setNarrationState] = useState(() => 'speechSynthesis' in window ? 'idle' : 'unsupported')
+  const [narrationState, setNarrationState] = useState('idle')
   const [narrationMuted, setNarrationMuted] = useState(false)
   const musicRef = useRef(null)
   const clickAudioContextRef = useRef(null)
-  const narrationVoiceRef = useRef(null)
-  const utteranceRef = useRef(null)
+  const narrationAudioRef = useRef(null)
+  const narrationCacheRef = useRef(new Map())
+  const narrationTokenRef = useRef(0)
+  const narrationEngineRef = useRef(null) // 'kokoro' | 'speech' | null — which engine is currently active
 
   const roundLocked = Boolean(pendingResult || result)
 
@@ -151,26 +277,125 @@ function Gameplay() {
     [selectedTargetId],
   )
 
-  const narrationText = useMemo(() => {
-    const irisBriefing = selectedTarget.transcript.replace(/^Iris:\s*/i, '')
-    return `Scenario. ${selectedTarget.scenario} Briefing from Iris. ${irisBriefing}`
-  }, [selectedTarget])
+  const buildNarrationText = (target) => {
+    const irisBriefing = target.transcript.replace(/^Iris:\s*/i, '')
+    return `Scenario. ${target.scenario} Briefing from Iris. ${irisBriefing}`
+  }
+
+  const narrationText = useMemo(() => buildNarrationText(selectedTarget), [selectedTarget])
+
+  // Kokoro has a hard ceiling of ~510 phoneme tokens per generate() call and
+  // kokoro-js does not chunk long text itself — it just truncates silently,
+  // which is why narration was cutting off partway through. Splitting on
+  // sentence boundaries (and hard-splitting any single sentence that's still
+  // too long) keeps every chunk safely under that ceiling. 180 chars is a
+  // conservative margin, since punctuation/spaces count as tokens too and
+  // some words phonemize to more tokens than characters.
+  const chunkNarrationText = (text, maxChars = 180) => {
+    const sentences = text.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g)?.map((s) => s.trim()).filter(Boolean) ?? [text.trim()]
+    const chunks = []
+    let current = ''
+
+    for (const sentence of sentences) {
+      if (sentence.length > maxChars) {
+        if (current) {
+          chunks.push(current)
+          current = ''
+        }
+        let remaining = sentence
+        while (remaining.length > maxChars) {
+          const splitAt = remaining.lastIndexOf(' ', maxChars) || maxChars
+          chunks.push(remaining.slice(0, splitAt).trim())
+          remaining = remaining.slice(splitAt).trim()
+        }
+        current = remaining
+        continue
+      }
+
+      const candidate = current ? `${current} ${sentence}` : sentence
+      if (candidate.length > maxChars) {
+        chunks.push(current)
+        current = sentence
+      } else {
+        current = candidate
+      }
+    }
+
+    if (current) chunks.push(current)
+    return chunks
+  }
+
+  // Returns an ARRAY OF PROMISES (one per chunk), not a promise of an array —
+  // so chunk 0 can start playing the moment it's ready, without waiting on
+  // the rest of the briefing to finish generating. Each chunk checks
+  // IndexedDB first (readCachedChunkBlob) and, if found, skips Kokoro
+  // entirely — that's what makes narration persist across reloads. Only a
+  // genuine cache miss falls through to generating (still one at a time;
+  // a single WASM session isn't meant for concurrent generate() calls), and
+  // the whole per-chunk array is cached in memory too so a background
+  // preload and an explicit Play press never trigger duplicate generations.
+  const getCachedNarrationChunks = (text) => {
+    const cache = narrationCacheRef.current
+    if (!cache.has(text)) {
+      const chunkTexts = chunkNarrationText(text)
+      const chunkPromises = []
+      chunkTexts.forEach((chunkText, index) => {
+        const previous = chunkPromises[index - 1] ?? Promise.resolve()
+        const dbKey = `v${NARRATION_CACHE_VERSION}::${NARRATION_VOICE}::${chunkText}`
+        const chunkPromise = previous.then(async () => {
+          const cachedBlob = await readCachedChunkBlob(dbKey)
+          if (cachedBlob) return URL.createObjectURL(cachedBlob)
+
+          const blob = await generateNarrationBlob(chunkText, NARRATION_VOICE)
+          writeCachedChunkBlob(dbKey, blob) // fire-and-forget; don't block playback on the write
+          return URL.createObjectURL(blob)
+        })
+        chunkPromise.catch(() => {}) // avoid unhandled-rejection noise; real handling happens where it's awaited
+        chunkPromises.push(chunkPromise)
+      })
+      cache.set(text, chunkPromises)
+    }
+    return cache.get(text)
+  }
 
   useEffect(() => {
-    if (!('speechSynthesis' in window)) {
-      return undefined
-    }
+    // TEMPORARILY DISABLED — reports of the page crashing after this was
+    // added. Most likely cause: if the "Invalid language identifier" issue
+    // is still unresolved, this was attempting 5 sequential failing WASM
+    // generations on every load instead of 1, which is a much heavier hit
+    // right at startup. Re-enable once a single Play-triggered generation
+    // is confirmed reliably working, ideally after the kokoro-js/model
+    // version investigation. To re-enable, restore the loop below:
+    //
+    // let cancelled = false
+    // const preloadOrder = [selectedTarget, ...targets.filter((target) => target.id !== selectedTarget.id)]
+    // ;(async () => {
+    //   for (const target of preloadOrder) {
+    //     if (cancelled) return
+    //     try {
+    //       await Promise.all(getCachedNarrationChunks(buildNarrationText(target)))
+    //     } catch (error) {
+    //       console.error(`Kokoro narration preload failed for "${target.id}":`, error)
+    //     }
+    //   }
+    // })()
+    // return () => { cancelled = true }
+  }, [])
 
-    const loadVoice = () => {
-      narrationVoiceRef.current = getPreferredNarrationVoice()
-    }
-
-    loadVoice()
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoice)
-
+  useEffect(() => {
     return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', loadVoice)
-      window.speechSynthesis.cancel()
+      narrationTokenRef.current += 1
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+      if (narrationAudioRef.current) {
+        narrationAudioRef.current.pause()
+        narrationAudioRef.current = null
+      }
+      narrationCacheRef.current.forEach((chunkPromises) => {
+        chunkPromises.forEach((chunkPromise) => {
+          chunkPromise.then((url) => URL.revokeObjectURL(url)).catch(() => {})
+        })
+      })
+      narrationCacheRef.current.clear()
     }
   }, [])
 
@@ -264,57 +489,143 @@ function Gameplay() {
   }
 
   const playNarration = (restart = false) => {
-    if (!('speechSynthesis' in window)) {
-      setNarrationState('unsupported')
-      return
-    }
-
-    const speech = window.speechSynthesis
-    if (!restart && speech.paused) {
-      speech.resume()
+    if (!restart && narrationState === 'paused') {
+      if (narrationEngineRef.current === 'speech') {
+        window.speechSynthesis.resume()
+      } else if (narrationAudioRef.current) {
+        narrationAudioRef.current.play().catch((error) => {
+          console.error('Narration resume failed:', error)
+          setNarrationState('unsupported')
+        })
+      }
       setNarrationMuted(false)
       setNarrationState('playing')
       return
     }
 
-    if (speech.paused) speech.resume()
-    speech.cancel()
-    const utterance = new SpeechSynthesisUtterance(narrationText)
-    utterance.voice = narrationVoiceRef.current ?? getPreferredNarrationVoice()
-    utterance.lang = utterance.voice?.lang ?? 'en-AU'
-    utterance.rate = 0.92
-    utterance.pitch = 1.04
-    utterance.volume = 1
-    utterance.onstart = () => setNarrationState('playing')
-    utterance.onend = () => {
-      setNarrationState('idle')
-      utteranceRef.current = null
+    const token = ++narrationTokenRef.current
+    if (narrationEngineRef.current === 'speech') window.speechSynthesis.cancel()
+    if (narrationAudioRef.current) {
+      narrationAudioRef.current.pause()
+      narrationAudioRef.current = null
     }
-    utterance.onerror = () => {
-      setNarrationState('idle')
-      utteranceRef.current = null
+    narrationEngineRef.current = null
+    setNarrationMuted(false)
+    setNarrationState('loading')
+
+    // Speaks the FULL text immediately with the browser's built-in voice —
+    // used as a stopgap when Kokoro isn't ready fast enough (see below).
+    // No chunking needed here; speechSynthesis has no token ceiling to
+    // worry about the way Kokoro does.
+    const speakWithBrowserFallback = () => {
+      if (!('speechSynthesis' in window)) {
+        setNarrationState('unsupported')
+        return
+      }
+      const utterance = new SpeechSynthesisUtterance(narrationText)
+      utterance.voice = getPreferredNarrationVoice()
+      utterance.lang = utterance.voice?.lang ?? 'en-AU'
+      utterance.rate = 0.92
+      utterance.pitch = 1.04
+      utterance.volume = 1
+      utterance.onstart = () => {
+        if (token !== narrationTokenRef.current) return
+        narrationEngineRef.current = 'speech'
+        setNarrationState('playing')
+      }
+      utterance.onend = () => {
+        if (token !== narrationTokenRef.current) return
+        setNarrationState('idle')
+      }
+      utterance.onerror = () => {
+        if (token !== narrationTokenRef.current) return
+        setNarrationState('unsupported')
+      }
+      window.speechSynthesis.speak(utterance)
     }
 
-    utteranceRef.current = utterance
-    setNarrationMuted(false)
-    speech.speak(utterance)
+    // Plays chunk `index`, then automatically advances to the next chunk as
+    // soon as this one finishes — so the whole briefing reads start to
+    // finish, not just the first ~510-token chunk.
+    const playChunkAt = (chunkPromises, index) => {
+      if (token !== narrationTokenRef.current) return
+      const chunkPromise = chunkPromises[index]
+      if (!chunkPromise) {
+        setNarrationState('idle')
+        return
+      }
+
+      chunkPromise
+        .then((url) => {
+          if (token !== narrationTokenRef.current) return
+          narrationEngineRef.current = 'kokoro'
+          const audio = new Audio(url)
+          audio.volume = 1
+          audio.onplaying = () => {
+            if (token !== narrationTokenRef.current) return
+            setNarrationState('playing')
+          }
+          audio.onended = () => {
+            if (token !== narrationTokenRef.current) return
+            playChunkAt(chunkPromises, index + 1)
+          }
+          audio.onerror = (event) => {
+            if (token !== narrationTokenRef.current) return
+            console.error('Narration audio playback failed:', event)
+            setNarrationState('unsupported')
+          }
+          narrationAudioRef.current = audio
+          audio.play().catch((error) => {
+            console.error('Narration playback failed to start:', error)
+            if (token === narrationTokenRef.current) setNarrationState('unsupported')
+          })
+        })
+        .catch((error) => {
+          console.error(`Kokoro narration generation failed on chunk ${index + 1}:`, error)
+          if (token === narrationTokenRef.current) setNarrationState('unsupported')
+        })
+    }
+
+    const chunkPromises = getCachedNarrationChunks(narrationText)
+
+    // Race Kokoro's first chunk against a short timeout. A cache hit (from
+    // IndexedDB or already generated this session) resolves almost
+    // instantly and wins the race, so Kokoro plays as normal. A genuine
+    // cache miss takes noticeably longer to generate, so the timeout wins
+    // instead and the browser voice speaks right away — Kokoro keeps
+    // generating every chunk in the background regardless, caching them for
+    // next time even though this particular play used the fallback voice.
+    withTimeout(chunkPromises[0], KOKORO_FIRST_CHUNK_TIMEOUT_MS)
+      .then(() => {
+        if (token !== narrationTokenRef.current) return
+        playChunkAt(chunkPromises, 0)
+      })
+      .catch(() => {
+        if (token !== narrationTokenRef.current) return
+        speakWithBrowserFallback()
+      })
   }
 
   const pauseNarration = () => {
-    if (!('speechSynthesis' in window)) return
-    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+    if (narrationState !== 'playing') return
+    if (narrationEngineRef.current === 'speech') {
       window.speechSynthesis.pause()
+      setNarrationState('paused')
+    } else if (narrationAudioRef.current) {
+      narrationAudioRef.current.pause()
       setNarrationState('paused')
     }
   }
 
   const toggleNarrationMute = () => {
-    if (!('speechSynthesis' in window)) return
-
     if (!narrationMuted) {
-      if (window.speechSynthesis.paused) window.speechSynthesis.resume()
-      window.speechSynthesis.cancel()
-      utteranceRef.current = null
+      narrationTokenRef.current += 1
+      if (narrationEngineRef.current === 'speech') window.speechSynthesis.cancel()
+      if (narrationAudioRef.current) {
+        narrationAudioRef.current.pause()
+        narrationAudioRef.current = null
+      }
+      narrationEngineRef.current = null
       setNarrationState('idle')
       setNarrationMuted(true)
     } else {
@@ -323,12 +634,14 @@ function Gameplay() {
   }
 
   const stopNarration = () => {
-    if ('speechSynthesis' in window) {
-      if (window.speechSynthesis.paused) window.speechSynthesis.resume()
-      window.speechSynthesis.cancel()
+    narrationTokenRef.current += 1
+    if (narrationEngineRef.current === 'speech') window.speechSynthesis.cancel()
+    if (narrationAudioRef.current) {
+      narrationAudioRef.current.pause()
+      narrationAudioRef.current = null
     }
-    utteranceRef.current = null
-    setNarrationState('speechSynthesis' in window ? 'idle' : 'unsupported')
+    narrationEngineRef.current = null
+    setNarrationState('idle')
     setNarrationMuted(false)
   }
 
@@ -608,12 +921,12 @@ function Gameplay() {
                   : <p>No additional intelligence has been gathered for this target. Successful attacks on other employees may reveal a useful lead.</p>}
               </section>
               <div className="audio-controls" aria-label="Narration controls">
-                <button className={narrationState === 'playing' ? 'active' : ''} type="button" aria-label={narrationState === 'paused' ? 'Resume narration' : 'Play narration'} disabled={narrationState === 'unsupported'} onClick={() => playNarration(false)}><span>▶</span> {narrationState === 'paused' ? 'RESUME' : 'PLAY'}</button>
+                <button className={narrationState === 'playing' ? 'active' : ''} type="button" aria-label={narrationState === 'paused' ? 'Resume narration' : 'Play narration'} disabled={narrationState === 'unsupported' || narrationState === 'loading'} onClick={() => playNarration(false)}><span>▶</span> {narrationState === 'loading' ? 'LOADING…' : narrationState === 'paused' ? 'RESUME' : 'PLAY'}</button>
                 <button className={narrationState === 'paused' ? 'active' : ''} type="button" aria-label="Pause narration" disabled={narrationState !== 'playing'} onClick={pauseNarration}><span>Ⅱ</span> PAUSE</button>
-                <button type="button" aria-label="Replay narration from the beginning" disabled={narrationState === 'unsupported'} onClick={() => playNarration(true)}><span>↻</span> REPLAY</button>
+                <button type="button" aria-label="Replay narration from the beginning" disabled={narrationState === 'unsupported' || narrationState === 'loading'} onClick={() => playNarration(true)}><span>↻</span> REPLAY</button>
                 <button className={narrationMuted ? 'active muted' : ''} type="button" aria-label={narrationMuted ? 'Unmute narration' : 'Mute narration'} aria-pressed={narrationMuted} disabled={narrationState === 'unsupported'} onClick={toggleNarrationMute}><span>{narrationMuted ? '🔈' : '🔇'}</span> {narrationMuted ? 'UNMUTE' : 'MUTE'}</button>
               </div>
-              <div className="transcript-box"><div className="transcript-heading"><span>TRANSCRIPT</span><span>{narrationState === 'unsupported' ? 'VOICE UNAVAILABLE' : narrationMuted ? 'NARRATION MUTED' : narrationState === 'playing' ? 'NARRATION PLAYING' : narrationState === 'paused' ? 'NARRATION PAUSED' : 'VISIBLE NARRATION'}</span></div><p>{selectedTarget.transcript}</p></div>
+              <div className="transcript-box"><div className="transcript-heading"><span>TRANSCRIPT</span><span>{narrationState === 'unsupported' ? 'VOICE UNAVAILABLE' : narrationMuted ? 'NARRATION MUTED' : narrationState === 'loading' ? 'GENERATING NARRATION…' : narrationState === 'playing' ? 'NARRATION PLAYING' : narrationState === 'paused' ? 'NARRATION PAUSED' : 'VISIBLE NARRATION'}</span></div><p>{selectedTarget.transcript}</p></div>
             </> : <div className="round-result" aria-live="polite">
               <div className="result-topline">
                 <div>
