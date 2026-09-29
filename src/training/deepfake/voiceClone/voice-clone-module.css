@@ -30,6 +30,12 @@
 .voice-sequence-board > div > button span, .voice-verification-sequence > button span, .voice-empty-slot span { color: #ff7ac8; font-weight: 800; }
 .voice-sequence-board > div > button i, .voice-verification-sequence > button i { color: #738d9b; font-style: normal; }
 .voice-empty-slot { border-style: dashed; color: #587586; }
+.voice-position-card { transition: border-color .2s, background .2s, box-shadow .2s; }
+.voice-position-card.correct-position { border-color: #47dfa9; background: rgba(26, 126, 92, .2); box-shadow: inset 0 0 20px rgba(71, 223, 169, .06); }
+.voice-position-card.correct-position span, .voice-position-card.correct-position i { color: #5ceab8; }
+.voice-position-card.incorrect-position { border-color: #ff6079; background: rgba(132, 29, 47, .2); box-shadow: inset 0 0 20px rgba(255, 96, 121, .06); }
+.voice-position-card.incorrect-position span, .voice-position-card.incorrect-position i { color: #ff8295; }
+.voice-position-guidance { grid-column: 1 / -1; margin: 10px 0 0; color: #91aebb; font-size: .7rem; line-height: 1.5; }
 .voice-module-feedback, .voice-response-result, .voice-demo-skipped { margin-top: 17px; padding: 14px 16px; border-left: 4px solid #48dca8; color: #d9f9ed; background: rgba(27, 131, 96, .13); }
 .voice-module-feedback.incorrect, .voice-response-result.risky { border-left-color: #ff6079; color: #ffdce2; background: rgba(132, 29, 47, .14); }
 .voice-module-feedback.lesson, .voice-response-result.uncertain, .voice-demo-skipped { border-left-color: #f0ae52; color: #ffe3b9; background: rgba(125, 77, 17, .14); }
@@ -50,8 +56,10 @@
 .voice-clue-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; margin-top: 18px; }
 .voice-clue-grid button { min-height: 58px; display: flex; align-items: center; gap: 11px; padding: 11px; border: 1px solid rgba(68, 197, 228, .25); color: #b7cbd5; background: rgba(5, 35, 53, .48); text-align: left; cursor: pointer; }
 .voice-clue-grid button span { display: grid; flex: 0 0 29px; height: 29px; place-items: center; border: 1px solid #4bcfe9; color: #63e0f7; }
-.voice-clue-grid button.selected { border-color: #41dca6; color: #e1fff5; background: rgba(26, 126, 92, .16); }
-.voice-clue-grid button.selected span { border-color: #45dca8; color: #59eab8; }
+.voice-clue-grid button.correct-selection { border-color: #41dca6; color: #e1fff5; background: rgba(26, 126, 92, .16); }
+.voice-clue-grid button.correct-selection span { border-color: #45dca8; color: #59eab8; }
+.voice-clue-grid button.incorrect-selection { border-color: #ff6079; color: #ffdce2; background: rgba(132, 29, 47, .16); }
+.voice-clue-grid button.incorrect-selection span { border-color: #ff6079; color: #ff8295; }
 .voice-clue-progress { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-top: 17px; color: #789bab; }
 .voice-clue-progress strong { color: #60e3f8; font-size: 1.3rem; }
 .voice-response-options { display: grid; gap: 11px; }
