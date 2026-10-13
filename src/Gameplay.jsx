@@ -33,6 +33,21 @@ let narrationWorker = null
 let narrationRequestId = 0
 const narrationWorkerRequests = new Map()
 
+function resetNarrationWorker(error) {
+  const failedWorker = narrationWorker
+  narrationWorker = null
+
+  if (failedWorker) {
+    failedWorker.onmessage = null
+    failedWorker.onerror = null
+    failedWorker.onmessageerror = null
+    failedWorker.terminate()
+  }
+
+  narrationWorkerRequests.forEach(({ reject }) => reject(error))
+  narrationWorkerRequests.clear()
+}
+
 function getNarrationWorker() {
   if (!narrationWorker) {
     narrationWorker = new Worker(new URL('./narrationWorker.js', import.meta.url), { type: 'module' })
@@ -46,9 +61,13 @@ function getNarrationWorker() {
     }
     narrationWorker.onerror = (event) => {
       // The worker itself failed to load/run — fail every request currently
-      // waiting on it rather than leaving them hanging forever.
-      narrationWorkerRequests.forEach(({ reject }) => reject(new Error(event.message || 'Narration worker failed')))
-      narrationWorkerRequests.clear()
+      // waiting on it, then discard it so the next request creates a fresh
+      // worker instead of posting to a permanently failed instance.
+      event.preventDefault()
+      resetNarrationWorker(new Error(event.message || 'Narration worker failed'))
+    }
+    narrationWorker.onmessageerror = () => {
+      resetNarrationWorker(new Error('Narration worker returned an unreadable response'))
     }
   }
   return narrationWorker
@@ -59,17 +78,22 @@ function generateNarrationBlob(text, voice) {
   const id = ++narrationRequestId
   return new Promise((resolve, reject) => {
     narrationWorkerRequests.set(id, { resolve, reject })
-    worker.postMessage({ id, text, voice })
+    try {
+      worker.postMessage({ id, text, voice })
+    } catch (error) {
+      narrationWorkerRequests.delete(id)
+      reject(error)
+    }
   })
 }
 
-// If Kokoro's first chunk isn't ready within this window — i.e. it's a
-// genuine cache miss and generation is actually underway, not just an
-// IndexedDB lookup — we speak immediately with the browser's built-in
-// speechSynthesis instead, so the first-ever play of a line isn't stuck
-// waiting on Kokoro. It keeps generating/caching in the background
-// regardless, so every later play of the same line uses Kokoro.
-const KOKORO_FIRST_CHUNK_TIMEOUT_MS = 400
+// A cold Kokoro start must download and initialise the model before it can
+// generate the narration. That can take tens of seconds, especially after
+// clearing the browser cache. The full set of chunks is prepared before
+// playback begins so narration does not pause between sentences while it
+// waits for the next chunk to finish generating.
+const KOKORO_NARRATION_TIMEOUT_MS = 180_000
+const KOKORO_INITIAL_BUFFER_CHUNKS = 3
 
 function withTimeout(promise, ms) {
   return new Promise((resolve, reject) => {
@@ -308,7 +332,6 @@ function Gameplay() {
       if (sentence.length > maxChars) {
         if (current) {
           chunks.push(current)
-          current = ''
         }
         let remaining = sentence
         while (remaining.length > maxChars) {
@@ -358,10 +381,16 @@ function Gameplay() {
           writeCachedChunkBlob(dbKey, blob) // fire-and-forget; don't block playback on the write
           return URL.createObjectURL(blob)
         })
-        chunkPromise.catch(() => {}) // avoid unhandled-rejection noise; real handling happens where it's awaited
         chunkPromises.push(chunkPromise)
       })
       cache.set(text, chunkPromises)
+
+      // A rejected promise must not remain in the in-memory cache. Removing
+      // the entry lets the next Play/Replay request genuinely retry Kokoro.
+      Promise.all(chunkPromises).catch((error) => {
+        if (cache.get(text) === chunkPromises) cache.delete(text)
+        console.error('Kokoro narration could not be prepared:', error)
+      })
     }
     return cache.get(text)
   }
@@ -391,6 +420,8 @@ function Gameplay() {
   }, [])
 
   useEffect(() => {
+    const narrationCache = narrationCacheRef.current
+
     return () => {
       narrationTokenRef.current += 1
       if ('speechSynthesis' in window) window.speechSynthesis.cancel()
@@ -398,12 +429,12 @@ function Gameplay() {
         narrationAudioRef.current.pause()
         narrationAudioRef.current = null
       }
-      narrationCacheRef.current.forEach((chunkPromises) => {
+      narrationCache.forEach((chunkPromises) => {
         chunkPromises.forEach((chunkPromise) => {
           chunkPromise.then((url) => URL.revokeObjectURL(url)).catch(() => {})
         })
       })
-      narrationCacheRef.current.clear()
+      narrationCache.clear()
     }
   }, [])
 
@@ -516,7 +547,7 @@ function Gameplay() {
       window.clearInterval(countdownTimer)
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, registerActivity))
     }
-  }, [idleSessionKey, navigate])
+  }, [idleSessionKey, navigate, resetProgress])
 
   const continueAfterIdle = () => {
     idleWarningOpenRef.current = false
@@ -658,20 +689,19 @@ function Gameplay() {
 
     const chunkPromises = getCachedNarrationChunks(narrationText)
 
-    // Race Kokoro's first chunk against a short timeout. A cache hit (from
-    // IndexedDB or already generated this session) resolves almost
-    // instantly and wins the race, so Kokoro plays as normal. A genuine
-    // cache miss takes noticeably longer to generate, so the timeout wins
-    // instead and the browser voice speaks right away — Kokoro keeps
-    // generating every chunk in the background regardless, caching them for
-    // next time even though this particular play used the fallback voice.
-    withTimeout(chunkPromises[0], KOKORO_FIRST_CHUNK_TIMEOUT_MS)
+    // Buffer several chunks before playback starts. One chunk was not enough
+    // to prevent a gap on slower devices, while waiting for every chunk made
+    // uncached targets appear not to work. Three chunks provide a useful
+    // head start while the remaining narration continues generating.
+    const initialBuffer = chunkPromises.slice(0, KOKORO_INITIAL_BUFFER_CHUNKS)
+    withTimeout(Promise.all(initialBuffer), KOKORO_NARRATION_TIMEOUT_MS)
       .then(() => {
         if (token !== narrationTokenRef.current) return
         playChunkAt(chunkPromises, 0)
       })
-      .catch(() => {
+      .catch((error) => {
         if (token !== narrationTokenRef.current) return
+        console.warn('Kokoro narration unavailable; using browser speech fallback:', error)
         speakWithBrowserFallback()
       })
   }
